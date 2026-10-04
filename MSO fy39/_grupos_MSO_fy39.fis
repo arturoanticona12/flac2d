@@ -1,0 +1,367 @@
+; _grupos_MSO_fy39.fis -- regiones FY39 (33 poligonos) generadas por geo_fy39.py
+; asigna Material / Construction / Block(=Borde_elastico) [/ Excavacion / Relleno] por centroide de zona
+fish define pip(x, y, px, py)
+    local dentro = false
+    local n = list.size(px)
+    local j = n
+    loop local i (1, n)
+        local yi = py(i)
+        local yj = py(j)
+        if (yi > y) # (yj > y) then
+            local xcr = px(i) + (y - yi) * (px(j) - px(i)) / (yj - yi)
+            if x < xcr then
+                dentro = not dentro
+            end_if
+        end_if
+        j = i
+    end_loop
+    return dentro
+end
+fish define definir_regiones
+    global reg_n = 33
+    global reg_mat = list.create(33, '')
+    global reg_con = list.create(33, '')
+    global reg_brd = list.create(33, 0)
+    global reg_exc = list.create(33, '')
+    global reg_rel = list.create(33, '')
+    global reg_px = list.create(33, 0)
+    global reg_py = list.create(33, 0)
+    global reg_bb = list.create(33, 0)
+    list.at(reg_mat, 1) = 'arena_densa'
+    list.at(reg_con, 1) = 'arena_densa'
+    list.at(reg_brd, 1) = 0
+    list.at(reg_exc, 1) = ''
+    list.at(reg_rel, 1) = ''
+    list.at(reg_px, 1) = list.sequence(247.9690, 254.1940, 304.1940, 304.1940, 254.1940, 228.7400, 234.4690, 237.4690, 244.9690)
+    list.at(reg_py, 1) = list.sequence(1617.5850, 1621.7350, 1621.7350, 1608.7650, 1608.7650, 1608.7650, 1612.5850, 1612.5850, 1617.5850)
+    list.at(reg_bb, 1) = list.sequence(228.7400, 1608.7650, 304.1940, 1621.7350)
+    list.at(reg_mat, 2) = 'grava'
+    list.at(reg_con, 2) = 'grava'
+    list.at(reg_brd, 2) = 0
+    list.at(reg_exc, 2) = ''
+    list.at(reg_rel, 2) = ''
+    list.at(reg_px, 2) = list.sequence(254.1940, 304.1940, 304.1940, 254.1940, 216.9860, 223.9690, 226.9690, 228.7400)
+    list.at(reg_py, 2) = list.sequence(1608.7650, 1608.7650, 1602.9300, 1602.9300, 1602.9300, 1607.5850, 1607.5850, 1608.7650)
+    list.at(reg_bb, 2) = list.sequence(216.9860, 1602.9300, 304.1940, 1608.7650)
+    list.at(reg_mat, 3) = 'roca_frac'
+    list.at(reg_con, 3) = 'roca_frac'
+    list.at(reg_brd, 3) = 0
+    list.at(reg_exc, 3) = ''
+    list.at(reg_rel, 3) = ''
+    list.at(reg_px, 3) = list.sequence(254.1940, 304.1940, 304.1940, -169.4160, -169.4160, 175.3690, 185.9680, 193.7990, 201.9150, 210.5190, 215.4190, 216.9860)
+    list.at(reg_py, 3) = list.sequence(1602.9300, 1602.9300, 1592.0000, 1592.0000, 1602.0350, 1602.0350, 1602.0350, 1601.9870, 1601.9380, 1601.8850, 1601.8850, 1602.9300)
+    list.at(reg_bb, 3) = list.sequence(-169.4160, 1592.0000, 304.1940, 1602.9300)
+    list.at(reg_mat, 4) = 'roca_sana'
+    list.at(reg_con, 4) = 'roca_sana'
+    list.at(reg_brd, 4) = 0
+    list.at(reg_exc, 4) = ''
+    list.at(reg_rel, 4) = ''
+    list.at(reg_px, 4) = list.sequence(-169.4160, 304.1940, 304.1940, -169.4160)
+    list.at(reg_py, 4) = list.sequence(1592.0000, 1592.0000, 1556.0000, 1556.0000)
+    list.at(reg_bb, 4) = list.sequence(-169.4160, 1556.0000, 304.1940, 1592.0000)
+    list.at(reg_mat, 5) = 'grava'
+    list.at(reg_con, 5) = 'grava'
+    list.at(reg_brd, 5) = 0
+    list.at(reg_exc, 5) = ''
+    list.at(reg_rel, 5) = ''
+    list.at(reg_px, 5) = list.sequence(175.3690, -169.4160, -169.4160, -36.3220, 164.8710, 169.8190)
+    list.at(reg_py, 5) = list.sequence(1602.0350, 1602.0350, 1607.5850, 1607.5850, 1607.5850, 1607.5850)
+    list.at(reg_bb, 5) = list.sequence(-169.4160, 1602.0350, 175.3690, 1607.5850)
+    list.at(reg_mat, 6) = 'grava'
+    list.at(reg_con, 6) = 'grava'
+    list.at(reg_brd, 6) = 0
+    list.at(reg_exc, 6) = ''
+    list.at(reg_rel, 6) = ''
+    list.at(reg_px, 6) = list.sequence(193.7990, 185.9680, 191.5180, 201.9690, 210.5190, 201.9150)
+    list.at(reg_py, 6) = list.sequence(1601.9870, 1602.0350, 1607.5850, 1607.5850, 1601.8850, 1601.9380)
+    list.at(reg_bb, 6) = list.sequence(185.9680, 1601.8850, 210.5190, 1607.5850)
+    list.at(reg_mat, 7) = 'arena_densa'
+    list.at(reg_con, 7) = 'arena_densa'
+    list.at(reg_brd, 7) = 0
+    list.at(reg_exc, 7) = ''
+    list.at(reg_rel, 7) = ''
+    list.at(reg_px, 7) = list.sequence(-36.3220, -169.4160, -169.4160, -119.4160, -36.3220, -32.4180, -29.4180, -24.2080, -19.4160, -16.4160, 3.5910, 22.9970, 37.8590, 54.2670, 61.1570, 70.2010, 86.2170, 89.5850, 95.2610, 106.2170, 122.2170, 138.2170, 157.3710, 164.8710)
+    list.at(reg_py, 7) = list.sequence(1607.5850, 1607.5850, 1616.8950, 1616.8950, 1616.8950, 1614.2920, 1612.2920, 1612.2920, 1612.2920, 1612.2920, 1612.2920, 1612.2920, 1612.2920, 1612.2920, 1612.2920, 1612.2920, 1612.2920, 1612.2920, 1612.2920, 1612.2920, 1612.2920, 1612.2920, 1612.2920, 1607.5850)
+    list.at(reg_bb, 7) = list.sequence(-169.4160, 1607.5850, 164.8710, 1616.8950)
+    list.at(reg_mat, 8) = 'relave'
+    list.at(reg_con, 8) = 'relave_1'
+    list.at(reg_brd, 8) = 1
+    list.at(reg_exc, 8) = ''
+    list.at(reg_rel, 8) = ''
+    list.at(reg_px, 8) = list.sequence(-119.4160, -169.4160, -169.4160, -119.4160)
+    list.at(reg_py, 8) = list.sequence(1616.8950, 1616.8950, 1626.0000, 1626.0000)
+    list.at(reg_bb, 8) = list.sequence(-169.4160, 1616.8950, -119.4160, 1626.0000)
+    list.at(reg_mat, 9) = 'relave'
+    list.at(reg_con, 9) = 'relave_1'
+    list.at(reg_brd, 9) = 0
+    list.at(reg_exc, 9) = ''
+    list.at(reg_rel, 9) = ''
+    list.at(reg_px, 9) = list.sequence(-36.3220, -119.4160, -119.4160, -36.3220, -9.3800, 7.8780, -9.3800, -23.8640)
+    list.at(reg_py, 9) = list.sequence(1616.8950, 1616.8950, 1626.0000, 1626.0000, 1626.0000, 1626.0000, 1617.3100, 1617.0870)
+    list.at(reg_bb, 9) = list.sequence(-119.4160, 1616.8950, 7.8780, 1626.0000)
+    list.at(reg_mat, 10) = 'dren'
+    list.at(reg_con, 10) = 'dren_1'
+    list.at(reg_brd, 10) = 0
+    list.at(reg_exc, 10) = ''
+    list.at(reg_rel, 10) = ''
+    list.at(reg_px, 10) = list.sequence(-32.4180, -36.3220, -23.8640, -9.3800, -15.4160, -23.7890)
+    list.at(reg_py, 10) = list.sequence(1614.2920, 1616.8950, 1617.0870, 1617.3100, 1614.2920, 1614.2920)
+    list.at(reg_bb, 10) = list.sequence(-36.3220, 1614.2920, -9.3800, 1617.3100)
+    list.at(reg_mat, 11) = 'relleno_comun'
+    list.at(reg_con, 11) = 'relleno_comun_1'
+    list.at(reg_brd, 11) = 0
+    list.at(reg_exc, 11) = ''
+    list.at(reg_rel, 11) = ''
+    list.at(reg_px, 11) = list.sequence(-29.4180, -32.4180, -23.7890, -15.4160, -19.4160, -24.2080)
+    list.at(reg_py, 11) = list.sequence(1612.2920, 1614.2920, 1614.2920, 1614.2920, 1612.2920, 1612.2920)
+    list.at(reg_bb, 11) = list.sequence(-32.4180, 1612.2920, -15.4160, 1614.2920)
+    list.at(reg_mat, 12) = 'relleno_comun'
+    list.at(reg_con, 12) = 'relleno_comun_1'
+    list.at(reg_brd, 12) = 0
+    list.at(reg_exc, 12) = ''
+    list.at(reg_rel, 12) = ''
+    list.at(reg_px, 12) = list.sequence(-16.4160, -19.4160, -15.4160, -9.3800, 7.8780, 9.8630, 12.9220)
+    list.at(reg_py, 12) = list.sequence(1612.2920, 1612.2920, 1614.2920, 1617.3100, 1626.0000, 1627.0000, 1627.0000)
+    list.at(reg_bb, 12) = list.sequence(-19.4160, 1612.2920, 12.9220, 1627.0000)
+    list.at(reg_mat, 13) = 'enrocado'
+    list.at(reg_con, 13) = 'enrocado_1'
+    list.at(reg_brd, 13) = 0
+    list.at(reg_exc, 13) = ''
+    list.at(reg_rel, 13) = ''
+    list.at(reg_px, 13) = list.sequence(3.5910, -16.4160, 12.9220, 24.8630, 54.2670, 37.8590, 22.9970)
+    list.at(reg_py, 13) = list.sequence(1612.2920, 1612.2920, 1627.0000, 1627.0000, 1612.2920, 1612.2920, 1612.2920)
+    list.at(reg_bb, 13) = list.sequence(-16.4160, 1612.2920, 54.2670, 1627.0000)
+    list.at(reg_mat, 14) = 'enrocado'
+    list.at(reg_con, 14) = 'enrocado_2'
+    list.at(reg_brd, 14) = 0
+    list.at(reg_exc, 14) = ''
+    list.at(reg_rel, 14) = ''
+    list.at(reg_px, 14) = list.sequence(61.1570, 54.2670, 24.8630, 12.9220, 20.9010, 32.8010, 70.2010)
+    list.at(reg_py, 14) = list.sequence(1612.2920, 1612.2920, 1627.0000, 1627.0000, 1631.0000, 1631.0000, 1612.2920)
+    list.at(reg_bb, 14) = list.sequence(12.9220, 1612.2920, 70.2010, 1631.0000)
+    list.at(reg_mat, 15) = 'enrocado'
+    list.at(reg_con, 15) = 'enrocado_3'
+    list.at(reg_brd, 15) = 0
+    list.at(reg_exc, 15) = ''
+    list.at(reg_rel, 15) = ''
+    list.at(reg_px, 15) = list.sequence(86.2170, 70.2010, 32.8010, 20.9010, 28.9010, 40.8010)
+    list.at(reg_py, 15) = list.sequence(1612.2920, 1612.2920, 1631.0000, 1631.0000, 1635.0000, 1635.0000)
+    list.at(reg_bb, 15) = list.sequence(20.9010, 1612.2920, 86.2170, 1635.0000)
+    list.at(reg_mat, 16) = 'enrocado'
+    list.at(reg_con, 16) = 'enrocado_4'
+    list.at(reg_brd, 16) = 0
+    list.at(reg_exc, 16) = ''
+    list.at(reg_rel, 16) = ''
+    list.at(reg_px, 16) = list.sequence(106.2170, 95.2610, 89.5850, 86.2170, 40.8010, 28.9010, 38.9010, 50.8010, 101.8838)
+    list.at(reg_py, 16) = list.sequence(1612.2920, 1612.2920, 1612.2920, 1612.2920, 1635.0000, 1635.0000, 1640.0000, 1640.0000, 1614.4586)
+    list.at(reg_bb, 16) = list.sequence(28.9010, 1612.2920, 106.2170, 1640.0000)
+    list.at(reg_mat, 17) = 'enrocado'
+    list.at(reg_con, 17) = 'enrocado_5'
+    list.at(reg_brd, 17) = 0
+    list.at(reg_exc, 17) = ''
+    list.at(reg_rel, 17) = ''
+    list.at(reg_px, 17) = list.sequence(101.8838, 50.8010, 38.9010, 46.9010, 58.8010, 113.7155, 122.2170, 106.2170)
+    list.at(reg_py, 17) = list.sequence(1614.4586, 1640.0000, 1640.0000, 1644.0000, 1644.0000, 1616.5428, 1612.2920, 1612.2920)
+    list.at(reg_bb, 17) = list.sequence(38.9010, 1612.2920, 122.2170, 1644.0000)
+    list.at(reg_mat, 18) = 'enrocado'
+    list.at(reg_con, 18) = 'enrocado_6'
+    list.at(reg_brd, 18) = 0
+    list.at(reg_exc, 18) = ''
+    list.at(reg_rel, 18) = ''
+    list.at(reg_px, 18) = list.sequence(138.2170, 122.2170, 113.7155, 58.8010, 46.9010, 54.9010, 66.8010, 125.5468, 129.0058)
+    list.at(reg_py, 18) = list.sequence(1612.2920, 1612.2920, 1616.5428, 1644.0000, 1644.0000, 1648.0000, 1648.0000, 1618.6271, 1616.8976)
+    list.at(reg_bb, 18) = list.sequence(46.9010, 1612.2920, 138.2170, 1648.0000)
+    list.at(reg_mat, 19) = 'relleno_comun'
+    list.at(reg_con, 19) = 'relleno_comun_2'
+    list.at(reg_brd, 19) = 0
+    list.at(reg_exc, 19) = ''
+    list.at(reg_rel, 19) = ''
+    list.at(reg_px, 19) = list.sequence(20.9010, 12.9220, 9.8630, 15.8210, 17.8010)
+    list.at(reg_py, 19) = list.sequence(1631.0000, 1627.0000, 1627.0000, 1630.0000, 1631.0000)
+    list.at(reg_bb, 19) = list.sequence(9.8630, 1627.0000, 20.9010, 1631.0000)
+    list.at(reg_mat, 20) = 'relleno_comun'
+    list.at(reg_con, 20) = 'relleno_comun_3'
+    list.at(reg_brd, 20) = 0
+    list.at(reg_exc, 20) = ''
+    list.at(reg_rel, 20) = ''
+    list.at(reg_px, 20) = list.sequence(20.9010, 17.8010, 23.8010, 25.8010, 28.9010)
+    list.at(reg_py, 20) = list.sequence(1631.0000, 1631.0000, 1634.0000, 1635.0000, 1635.0000)
+    list.at(reg_bb, 20) = list.sequence(17.8010, 1631.0000, 28.9010, 1635.0000)
+    list.at(reg_mat, 21) = 'relave'
+    list.at(reg_con, 21) = 'relave_2'
+    list.at(reg_brd, 21) = 0
+    list.at(reg_exc, 21) = ''
+    list.at(reg_rel, 21) = ''
+    list.at(reg_px, 21) = list.sequence(15.8210, 9.8630, 7.8780, -9.3800, -36.3220, -119.4160, -119.4160, -36.3220, -9.3800, 7.8780)
+    list.at(reg_py, 21) = list.sequence(1630.0000, 1627.0000, 1626.0000, 1626.0000, 1626.0000, 1626.0000, 1630.0000, 1630.0000, 1630.0000, 1630.0000)
+    list.at(reg_bb, 21) = list.sequence(-119.4160, 1626.0000, 15.8210, 1630.0000)
+    list.at(reg_mat, 22) = 'relave'
+    list.at(reg_con, 22) = 'relave_3'
+    list.at(reg_brd, 22) = 0
+    list.at(reg_exc, 22) = ''
+    list.at(reg_rel, 22) = ''
+    list.at(reg_px, 22) = list.sequence(17.8010, 15.8210, 7.8780, -9.3800, -36.3220, -119.4160, -119.4160, 23.8010)
+    list.at(reg_py, 22) = list.sequence(1631.0000, 1630.0000, 1630.0000, 1630.0000, 1630.0000, 1630.0000, 1634.0000, 1634.0000)
+    list.at(reg_bb, 22) = list.sequence(-119.4160, 1630.0000, 23.8010, 1634.0000)
+    list.at(reg_mat, 23) = 'relave'
+    list.at(reg_con, 23) = 'relave_2'
+    list.at(reg_brd, 23) = 1
+    list.at(reg_exc, 23) = ''
+    list.at(reg_rel, 23) = ''
+    list.at(reg_px, 23) = list.sequence(-119.4160, -119.4160, -169.4160, -169.4160)
+    list.at(reg_py, 23) = list.sequence(1630.0000, 1626.0000, 1626.0000, 1630.0000)
+    list.at(reg_bb, 23) = list.sequence(-169.4160, 1626.0000, -119.4160, 1630.0000)
+    list.at(reg_mat, 24) = 'relave'
+    list.at(reg_con, 24) = 'relave_3'
+    list.at(reg_brd, 24) = 1
+    list.at(reg_exc, 24) = ''
+    list.at(reg_rel, 24) = ''
+    list.at(reg_px, 24) = list.sequence(-119.4160, -169.4160, -169.4160, -119.4160)
+    list.at(reg_py, 24) = list.sequence(1630.0000, 1630.0000, 1634.0000, 1634.0000)
+    list.at(reg_bb, 24) = list.sequence(-169.4160, 1630.0000, -119.4160, 1634.0000)
+    list.at(reg_mat, 25) = 'relave'
+    list.at(reg_con, 25) = 'relave_4'
+    list.at(reg_brd, 25) = 1
+    list.at(reg_exc, 25) = ''
+    list.at(reg_rel, 25) = ''
+    list.at(reg_px, 25) = list.sequence(-119.4160, -169.4160, -169.4160, -119.4160)
+    list.at(reg_py, 25) = list.sequence(1634.0000, 1634.0000, 1639.0000, 1639.0000)
+    list.at(reg_bb, 25) = list.sequence(-169.4160, 1634.0000, -119.4160, 1639.0000)
+    list.at(reg_mat, 26) = 'relave'
+    list.at(reg_con, 26) = 'relave_4'
+    list.at(reg_brd, 26) = 0
+    list.at(reg_exc, 26) = ''
+    list.at(reg_rel, 26) = ''
+    list.at(reg_px, 26) = list.sequence(23.8010, -119.4160, -119.4160, 33.8010, 25.8010)
+    list.at(reg_py, 26) = list.sequence(1634.0000, 1634.0000, 1639.0000, 1639.0000, 1635.0000)
+    list.at(reg_bb, 26) = list.sequence(-119.4160, 1634.0000, 33.8010, 1639.0000)
+    list.at(reg_mat, 27) = 'relleno_comun'
+    list.at(reg_con, 27) = 'relleno_comun_4'
+    list.at(reg_brd, 27) = 0
+    list.at(reg_exc, 27) = ''
+    list.at(reg_rel, 27) = ''
+    list.at(reg_px, 27) = list.sequence(28.9010, 25.8010, 33.8010, 35.8010, 38.9010)
+    list.at(reg_py, 27) = list.sequence(1635.0000, 1635.0000, 1639.0000, 1640.0000, 1640.0000)
+    list.at(reg_bb, 27) = list.sequence(25.8010, 1635.0000, 38.9010, 1640.0000)
+    list.at(reg_mat, 28) = 'relave'
+    list.at(reg_con, 28) = 'relave_5'
+    list.at(reg_brd, 28) = 1
+    list.at(reg_exc, 28) = ''
+    list.at(reg_rel, 28) = ''
+    list.at(reg_px, 28) = list.sequence(-119.4160, -169.4160, -169.4160, -119.4160)
+    list.at(reg_py, 28) = list.sequence(1639.0000, 1639.0000, 1643.0000, 1643.0000)
+    list.at(reg_bb, 28) = list.sequence(-169.4160, 1639.0000, -119.4160, 1643.0000)
+    list.at(reg_mat, 29) = 'relave'
+    list.at(reg_con, 29) = 'relave_5'
+    list.at(reg_brd, 29) = 0
+    list.at(reg_exc, 29) = ''
+    list.at(reg_rel, 29) = ''
+    list.at(reg_px, 29) = list.sequence(33.8010, -119.4160, -119.4160, 41.8010, 35.8010)
+    list.at(reg_py, 29) = list.sequence(1639.0000, 1639.0000, 1643.0000, 1643.0000, 1640.0000)
+    list.at(reg_bb, 29) = list.sequence(-119.4160, 1639.0000, 41.8010, 1643.0000)
+    list.at(reg_mat, 30) = 'relleno_comun'
+    list.at(reg_con, 30) = 'relleno_comun_5'
+    list.at(reg_brd, 30) = 0
+    list.at(reg_exc, 30) = ''
+    list.at(reg_rel, 30) = ''
+    list.at(reg_px, 30) = list.sequence(38.9010, 35.8010, 41.8010, 43.8010, 46.9010)
+    list.at(reg_py, 30) = list.sequence(1640.0000, 1640.0000, 1643.0000, 1644.0000, 1644.0000)
+    list.at(reg_bb, 30) = list.sequence(35.8010, 1640.0000, 46.9010, 1644.0000)
+    list.at(reg_mat, 31) = 'relave'
+    list.at(reg_con, 31) = 'relave_6'
+    list.at(reg_brd, 31) = 1
+    list.at(reg_exc, 31) = ''
+    list.at(reg_rel, 31) = ''
+    list.at(reg_px, 31) = list.sequence(-119.4160, -169.4160, -169.4160, -119.4160)
+    list.at(reg_py, 31) = list.sequence(1643.0000, 1643.0000, 1647.0000, 1647.0000)
+    list.at(reg_bb, 31) = list.sequence(-169.4160, 1643.0000, -119.4160, 1647.0000)
+    list.at(reg_mat, 32) = 'relave'
+    list.at(reg_con, 32) = 'relave_6'
+    list.at(reg_brd, 32) = 0
+    list.at(reg_exc, 32) = ''
+    list.at(reg_rel, 32) = ''
+    list.at(reg_px, 32) = list.sequence(41.8010, -119.4160, -119.4160, 49.8010, 43.8010)
+    list.at(reg_py, 32) = list.sequence(1643.0000, 1643.0000, 1647.0000, 1647.0000, 1644.0000)
+    list.at(reg_bb, 32) = list.sequence(-119.4160, 1643.0000, 49.8010, 1647.0000)
+    list.at(reg_mat, 33) = 'relleno_comun'
+    list.at(reg_con, 33) = 'relleno_comun_6'
+    list.at(reg_brd, 33) = 0
+    list.at(reg_exc, 33) = ''
+    list.at(reg_rel, 33) = ''
+    list.at(reg_px, 33) = list.sequence(46.9010, 43.8010, 49.8010, 51.8010, 54.9010)
+    list.at(reg_py, 33) = list.sequence(1644.0000, 1644.0000, 1647.0000, 1648.0000, 1648.0000)
+    list.at(reg_bb, 33) = list.sequence(43.8010, 1644.0000, 54.9010, 1648.0000)
+end
+fish define buscar_region(x, y)
+    ; indice de la region que contiene (x,y); 0 si ninguna; -1 si mas de una
+    local hallada = 0
+    local n = 0
+    loop local r (1, reg_n)
+        local bb = list.at(reg_bb, r)
+        if x >= bb(1) then
+            if x <= bb(3) then
+                if y >= bb(2) then
+                    if y <= bb(4) then
+                        if pip(x, y, list.at(reg_px, r), list.at(reg_py, r)) then
+                            hallada = r
+                            n = n + 1
+                        end_if
+                    end_if
+                end_if
+            end_if
+        end_if
+    end_loop
+    if n > 1 then
+        return -1
+    end_if
+    return hallada
+end
+fish define asignar_grupos
+    definir_regiones
+    local n_sin = 0
+    local n_dob = 0
+    local n_resp = 0
+    loop foreach local z zone.list
+        local x = zone.pos.x(z)
+        local y = zone.pos.y(z)
+        local r = buscar_region(x, y)
+        if r == 0 then
+            ; respaldo: zona degenerada cuyo centroide cae sobre un borde -> probar a +-5 cm
+            n_resp = n_resp + 1
+            r = buscar_region(x + 0.05, y)
+            if r <= 0 then
+                r = buscar_region(x - 0.05, y)
+            end_if
+            if r <= 0 then
+                r = buscar_region(x, y + 0.05)
+            end_if
+            if r <= 0 then
+                r = buscar_region(x, y - 0.05)
+            end_if
+            io.out('GRUPOS respaldo zona ' + string(zone.id(z)) + ' en (' + string(x) + ',' + string(y) + ') -> region ' + string(r))
+        end_if
+        if r > 0 then
+            zone.group(z, 'Material') = list.at(reg_mat, r)
+            zone.group(z, 'Construction') = list.at(reg_con, r)
+            if list.at(reg_brd, r) == 1 then
+                zone.group(z, 'Block') = 'Borde_elastico'
+            end_if
+            if string.len(list.at(reg_rel, r)) > 0 then
+                zone.group(z, 'Relleno') = list.at(reg_rel, r)
+            end_if
+            if string.len(list.at(reg_exc, r)) > 0 then
+                zone.group(z, 'Excavacion') = list.at(reg_exc, r)
+            end_if
+        end_if
+        if r == 0 then
+            n_sin = n_sin + 1
+        end_if
+        if r < 0 then
+            n_dob = n_dob + 1
+        end_if
+    end_loop
+    io.out('GRUPOS zonas sin region=' + string(n_sin) + ' en dos regiones=' + string(n_dob) + ' resueltas por respaldo=' + string(n_resp))
+    if n_sin + n_dob > 0 then
+        system.error = 'asignar_grupos: zonas sin region o duplicadas'
+    end_if
+end

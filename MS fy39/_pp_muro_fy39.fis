@@ -1,0 +1,39 @@
+; _pp_muro_fy39.fis -- reemplaza las lineas FY31 'zone gridpoint initialize pore-pressure 0.0 range id NNNN'
+; (ids de la malla FY31: nodos del cuerpo del muro, a la derecha de la cara aguas arriba, sobre las lineas de
+; coronamiento antiguas, a los que 'zone water set' dejo pp > 0). Misma intencion con una regla geometrica:
+; pp = 0 en todo nodo con y >= y_base (base del muro) y x > x_cara(y) + tol, siendo x_cara la cara aguas arriba
+; (polilinea cx/cy, y creciente). modo 1 = corrige, modo 0 = solo cuenta (diagnostico).
+fish define x_cara(y, cx, cy)
+    local n = list.size(cy)
+    if y <= cy(1) then
+        return cx(1)
+    end_if
+    if y >= cy(n) then
+        return cx(n)
+    end_if
+    loop local i (2, n)
+        if y <= cy(i) then
+            return cx(i - 1) + (y - cy(i - 1)) * (cx(i) - cx(i - 1)) / (cy(i) - cy(i - 1))
+        end_if
+    end_loop
+    return cx(n)
+end
+fish define pp_cero_muro(cx, cy, y_base, modo)
+    local n_pos = 0
+    local pp_max = 0.0
+    loop foreach local g gp.list
+        local y = gp.pos.y(g)
+        if y >= y_base - 0.001 then
+            if gp.pos.x(g) > x_cara(y, cx, cy) + 0.05 then
+                if gp.pp(g) > 0.0 then
+                    n_pos = n_pos + 1
+                    pp_max = math.max(pp_max, gp.pp(g))
+                    if modo == 1 then
+                        gp.pp(g) = 0.0
+                    end_if
+                end_if
+            end_if
+        end_if
+    end_loop
+    io.out('PP_MURO nodos del muro con pp>0 = ' + string(n_pos) + ' pp_max = ' + string(pp_max) + ' modo ' + string(modo))
+end

@@ -1,0 +1,87 @@
+fish define pp_calc(Zone_pointer)
+    local pp
+    local syy
+    if zone.model(Zone_pointer) != 'null'
+        pp =  zone.pp(Zone_pointer)
+        syy =  zone.stress.yy(Zone_pointer)
+        ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+        ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+        if zone.extra(Zone_pointer,3) != 0.0
+            ;;; (PP_0 - PP)/sigma_yy
+            zone.extra(Zone_pointer,5) = (zone.extra(Zone_pointer,2)-pp)/zone.extra(Zone_pointer,3)
+        else 
+            zone.extra(Zone_pointer,5) = 0
+        end_if
+        ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+        ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+        ; ex = 6 : Current PP Ratio (Ru on total stress)
+        if syy != 0.0 then
+            zone.extra(Zone_pointer,6) = pp/(-syy)
+        else
+            zone.extra(Zone_pointer,6) = 0.0
+        endif
+        ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+        ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+        ; ex = 7 : Max. PP Ratio (Ru máx)
+        if zone.extra(Zone_pointer,6) > 0.0 then
+            zone.extra(Zone_pointer,7) = math.max(zone.extra(Zone_pointer,7),zone.extra(Zone_pointer,6))
+        endif
+        ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+        ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+        ; ex = 8 : Max. Excess PP Ratio (EPPR máx)
+        if zone.extra(Zone_pointer,5) > 0.0 then
+            zone.extra(Zone_pointer,8) = math.max(zone.extra(Zone_pointer,8),zone.extra(Zone_pointer,5))
+        endif  
+        ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+        ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+        ; ex = 9 : Current Excess PP Ratio (EPPR based on esig3)
+        ; ex = 10 : Max. EPPR based on esig3
+        if zone.extra(Zone_pointer,4) != 0.0 then
+            zone.extra(Zone_pointer,9) = (pp - zone.extra(Zone_pointer,2))/(-zone.extra(Zone_pointer,4))
+        else
+            zone.extra(Zone_pointer,9) = 0.0
+        endif
+        zone.extra(Zone_pointer,13) = math.max(zone.extra(Zone_pointer,13),zone.extra(Zone_pointer,9))
+            ;
+        
+    end_if
+end
+
+
+fish define apply_Earthquake(x,y,table_ID)
+    local id=zone.near(x,y)
+    local shear_rock=zone.prop(id,'Shear')
+    io.out('shear_Rock = ' + string(shear_rock))
+    local bulk_Rock=zone.prop(id,'Bulk')
+    io.out('Bulk_Rock = ' + string(bulk_Rock))
+    local density_Rock=zone.prop(id,'density')
+    io.out('density_Rock = ' + string(density_Rock))
+    local Vs = math.sqrt(shear_rock/density_Rock)
+    local factor_ = 1.02
+    local Vp = math.sqrt((bulk_Rock + (4.*shear_rock/3.))/density_Rock)
+    io.out('Shear Velocity = ' + string(Vs))
+    local sxy0 = -0.5*(2.*density_Rock*Vs)*factor_;*math.cos(37.6*math.pi()/180); factor de atenuacion 0.50
+;    local syy0 = -0.5*(2.*density_Rock*Vp)
+command
+  zone face apply stress-xy [sxy0] table [table_ID] range group 'Bottom'
+end_command
+end
+
+fish define apply_Earthquake_plastic(x,y,table_ID,dir_x_PGA)
+    local id=zone.near(x,y)
+    local shear_rock=zone.prop(id,'Shear')
+    io.out('shear_Rock = ' + string(shear_rock))
+    local bulk_Rock=zone.prop(id,'Bulk')
+    io.out('Bulk_Rock = ' + string(bulk_Rock))
+    local density_Rock=zone.prop(id,'density')
+    io.out('density_Rock = ' + string(density_Rock))
+    local Vs = math.sqrt(shear_rock/density_Rock)
+    local factor_ = 1.02
+    local Vp = math.sqrt((bulk_Rock + (4.*shear_rock/3.))/density_Rock)
+    io.out('Shear Velocity = ' + string(Vs))
+    local sxy0 = -0.5*(2.0*density_Rock*Vs)*factor_*dir_x_PGA;*math.cos(37.6*math.pi()/180); factor de atenuacion 0.50
+;    local syy0 = -0.5*(2.*density_Rock*Vp)
+command
+  zone face apply stress-xy [sxy0] table [table_ID] range group 'Bottom'
+end_command
+end

@@ -1,0 +1,73 @@
+fish define sigma_v_effective(Zone_Pointer)
+    local Sigma_yy = zone.stress.effective.yy(Zone_Pointer)
+    local Sigma_yy_tot = zone.stress.yy(Zone_Pointer)
+    Sigma_yy = -Sigma_yy
+    if Sigma_yy<0 then
+        Sigma_yy=50E3
+    endif
+    if Sigma_yy=0 then
+        Sigma_yy=Sigma_yy_tot
+    endif
+    global sigma_v_effective = math.max(50e3,Sigma_yy)
+end
+
+fish define sigma_3_effective(Zone_Pointer)
+    local Sigma_xx = zone.stress.effective.xx(Zone_Pointer)
+    local Sigma_yy = zone.stress.effective.yy(Zone_Pointer) 
+    local Sigma_xy= zone.stress.xy(Zone_Pointer) 
+    local Sigma_1 = ((Sigma_yy + Sigma_xx)/2) + math.sqrt(((0.5*(Sigma_yy - Sigma_xx))^2)+((Sigma_xy)^2))
+    local Sigma_3 = ((Sigma_yy + Sigma_xx)/2) - math.sqrt(((0.5*(Sigma_yy - Sigma_xx))^2)+((Sigma_xy)^2))
+    global sigma_3_effective = math.max(Sigma_1,Sigma_3)
+end
+
+fish define sigma_3_total(Zone_Pointer)
+    local Sigma_xx = zone.stress.xx(Zone_Pointer)
+    local Sigma_yy = zone.stress.yy(Zone_Pointer) 
+    local Sigma_xy= zone.stress.xy(Zone_Pointer) 
+    local Sigma_1 = ((Sigma_yy + Sigma_xx)/2) + math.sqrt(((0.5*(Sigma_yy - Sigma_xx))^2)+((Sigma_xy)^2))
+    local Sigma_3 = ((Sigma_yy + Sigma_xx)/2) - math.sqrt(((0.5*(Sigma_yy - Sigma_xx))^2)+((Sigma_xy)^2))
+    global sigma_3_total = math.max(Sigma_1,Sigma_3)
+end
+
+fish define P_effective(Zone_Pointer)
+    local Sigma_xx = zone.stress.effective.xx(Zone_Pointer)
+    local Sigma_yy = zone.stress.effective.yy(Zone_Pointer) 
+    local Sigma_xy= zone.stress.xy(Zone_Pointer) 
+    local Sigma_1 = ((Sigma_yy + Sigma_xx)/2) + math.sqrt(((0.5*(Sigma_yy - Sigma_xx))^2)+((Sigma_xy)^2))
+    local Sigma_3 = ((Sigma_yy + Sigma_xx)/2) - math.sqrt(((0.5*(Sigma_yy - Sigma_xx))^2)+((Sigma_xy)^2))
+    global P_effective =  (Sigma_1 + Sigma_3)/2
+end
+
+fish define P_effective_3(Zone_Pointer)
+    local Sigma_xx = zone.stress.effective.xx(Zone_Pointer)
+    local Sigma_yy = zone.stress.effective.yy(Zone_Pointer) 
+    local Sigma_xy= zone.stress.xy(Zone_Pointer) 
+    local Sigma_1 = ((Sigma_yy + Sigma_xx)/2) + math.sqrt(((0.5*(Sigma_yy - Sigma_xx))^2)+((Sigma_xy)^2))
+    local Sigma_3 = ((Sigma_yy + Sigma_xx)/2) - math.sqrt(((0.5*(Sigma_yy - Sigma_xx))^2)+((Sigma_xy)^2))
+    global P_effective_3 =  (Sigma_1 + 2*Sigma_3)/3
+end
+
+fish define Shear_to_Bulk(Shear,poisson)
+    global Shear_to_Bulk = Shear*(2*(1+poisson))/(3*(1-2*poisson))
+end
+
+fish define Friction_leps(A,n,ZP,fric_min)
+    local Fric_Rom 
+;    local Coh_Rom
+    local Effective_S_YY = math.abs(zone.stress.effective.yy(ZP))
+    if Effective_S_YY > 0
+;    if Effective_S_YY > 200 
+        Fric_Rom = 180*math.atan(A*n*(Effective_S_YY/1000)^(n-1))/math.pi
+;        Coh_ROM= A*(Effective_S_YY^n)*(1-n)*1000
+        ; Verificar si es necesario hacer el Else con esta funcion presente
+;        Fric_Rom = math.min(40,Fric_Rom)
+;    else
+;        Fric_Rom = 40
+;    end_if 
+    else 
+        Fric_Rom = fric_min
+    
+    end_if
+        Friction_leps = Fric_Rom 
+;zone.prop(z,'cohesion') = Coh_ROM
+end

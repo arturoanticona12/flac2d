@@ -1,0 +1,216 @@
+;---------------------------------------------------------------------------------
+; BHP Spence - Muro Norte
+; FLAC 2D Analysis - Model Set Up
+; By: Wilson Anticona 
+; Date: November 2025
+; All units in m-sec
+;---------------------------------------------------------------------------------
+;   MODEL SETUP
+model new
+model restore '00_GEO_MS_1633'
+;
+model large-strain off
+fish automatic-create off ; VARIABLE LOCAL/GLOBAL
+model title "Spence_MS"
+;
+model configure dynamic
+model configure fluid
+model configure plugins
+;
+;zone select off range use-hidden
+zone cmodel load "cmodelubchyst009.dll"
+zone face skin
+zone attach by-face
+zone face apply velocity-normal 0.0 range group 'East' or 'West'
+model gravity 9.81
+;
+[Global Name_Muro = "MSW_MW_MS" ];"MSW_MW_MS" ] ;"MP" "MNW" "MNE" 
+program call 'fishtank' suppress
+program call 'static_functions' suppress
+program call 'fishtank_water' suppress
+;
+geometry import 'FLAC MS FY31 WT1.dxf'
+geometry import 'FLAC MS FY31 WT2.dxf'
+geometry import 'FLAC MS FY31 WT3.dxf'
+;
+;   BOUNDARY CONDITIONS
+;zone face apply velocity-normal 0 range group 'East' or 'West'
+;zone face apply velocity (0,0) range group 'Bottom'
+zone gridpoint fix velocity-x range group 'East' or 'West' or 'Bottom'
+zone gridpoint fix velocity-y range group 'Bottom'
+;
+model mechanical active on
+model dynamic active off
+model fluid active off
+;
+zone mechanical damping combined
+model history mechanical unbalanced-maximum 
+model history mechanical ratio 
+model history mechanical convergence
+;
+; ------------------------------------------------------------------
+; STAGE 0: BEDROCK (STATIC)
+zone cmodel assign null
+zone cmodel assign elastic range group "Material=roca_sana"
+zone cmodel assign elastic range group "Material=roca_frac"
+[assign_density(::zone.list)]
+zone initialize-stresses ratio 0.5 range group "Material=roca_sana"
+zone initialize-stresses ratio 0.5 range group "Material=roca_frac"
+[assign_props(::zone.list)]
+model solve elastic only
+zone gridpoint initialize displacement (0,0)
+[Ini_K0(::zone.list)]
+[Ini_Kalpha(::zone.list)]
+; K0
+zone initialize-stresses ratio 0.5 range group "Material=roca_sana"
+zone initialize-stresses ratio 0.5 range group "Material=roca_frac"
+;zone cmodel assign elastic range group "Block=Block 8"
+; SOLVE MODEL
+[assign_props(::zone.list)]
+model solve
+zone gridpoint initialize displacement (0,0)
+[Ini_K0(::zone.list)]
+[Ini_Kalpha(::zone.list)]
+; MODEL SAVE
+;
+;
+; ----------- PREDYN ------------
+;
+;zone cmodel assign elastic range group 'Material=relave'
+;
+;zone cmodel assign elastic range group 'Material=relave'
+;zone initialize-stresses ratio 0.5
+;[assign_props_dyn(::zone.list)]
+;model solve
+;[Ini_K0(::zone.list)]
+;[Ini_Kalpha(::zone.list)]
+;
+;zone cmodel assign elastic range id 5329
+;zone cmodel assign elastic range id 5328
+;zone cmodel assign elastic range id 5196
+;zone cmodel assign elastic range id 5327
+;zone cmodel assign elastic range id 5495
+;zone cmodel assign elastic range id 5494
+;zone cmodel assign elastic range id 5496
+;zone cmodel assign elastic range id 5252
+;zone cmodel assign elastic range id 341
+;zone cmodel assign elastic range id 338
+;zone cmodel assign elastic range id 340
+;zone cmodel assign elastic range id 337
+;zone cmodel assign elastic range id 339
+;zone cmodel assign elastic range id 336
+;zone cmodel assign elastic range group "Block=Block 7"
+;zone cmodel assign elastic range group "Block=Block 4"
+;zone cmodel assign elastic range group "Block=Block 5"
+;
+;
+; ----------- DYN ---------------
+;
+program call 'fishtank_dyn' suppress
+;
+model dynamic active=on
+model large-strain on
+;zone dynamic multi-step on
+model dynamic time-total 0.0
+;
+;zone nodal-mixed-discretization off
+;zone gridpoint initialize fluid-modulus 2E9
+;zone gridpoint initialize fluid-tension -101325.0
+;
+table 'GM01' import 'GM01.vel'
+table 'GM02' import 'GM02.vel'
+table 'GM03' import 'GM03.vel'
+table 'GM04' import 'GM04.vel'
+table 'GM05' import 'GM05.vel'
+table 'GM06' import 'GM06.vel'
+table 'GM07' import 'GM07.vel'
+table 'GM08' import 'GM08.vel'
+table 'GM09' import 'GM09.vel'
+table 'GM10' import 'GM10.vel'
+table 'GM11' import 'GM11.vel'
+table 'GM12' import 'GM12.vel'
+table 'GM13' import 'GM13.vel'
+table 'GM14' import 'GM14.vel'
+;
+fish define applybase(table_ID)
+    local unit_corr = 1.0
+    local vs_base = 2400.0
+    local dens_base = 25*101.971621
+    local base_mult = 1.0*vs_base*dens_base*unit_corr
+    command
+        zone face apply stress-xy [base_mult] table [table_ID] range group 'Bottom'
+    end_command
+end
+;
+history delete
+call 'Hist_points.dat' ;Tiene Hist de tiempo
+call 'export_his.dat'
+;
+zone gridpoint initialize velocity (0,0)
+zone gridpoint initialize displacement (0,0)
+;zone gridpoint free velocity-x 
+;zone gridpoint free velocity-y
+;zone initialize state 0
+; DAMPING
+[global _damp = 0.005]  ; target damping level as decimal
+[global eta1 = -7.90e-05*(_damp*100)^2+8.09e-03*(_damp*100)]  ; 0.5 Hz Component
+[global eta2 =  2.03e-04*(_damp*100)^2+5.69e-03*(_damp*100)]  ; 3.5 Hz Component
+[global eta3 =  4.69e-04*(_damp*100)^2+8.06e-03*(_damp*100)]  ; 25.0 Hz Component
+;zone dynamic damping maxwell ([eta1] 0.5)([eta2] 3.5)([eta3] 25.0) ; --- Damping ---
+zone dynamic damping rayleigh 0.005 4.0;
+;
+; QUIET BOUNDARY
+zone face apply quiet range group 'Bottom'
+; SAVE PRE-SHAKE
+model save '04_predyn'
+;
+; ---------- GM07 -------------------------------------------------------------------------------
+model restore '04_predyn'
+[applybase('GM07')]
+; FREE-FIELD
+zone dynamic free-field on
+;
+fish define run_dyn
+   loop local step (1,19)
+     local time_Step=5*step
+     local file_name='GM07_'+string(time_Step)+'s.sav'
+    command
+      model solve time-total [time_Step]
+      [pp_calc(::zone.list)]
+      model save [file_name] compress 
+    end_command
+   end_loop
+end
+@run_dyn
+;
+model solve time-total 100.0
+model save "GM07"
+; EXPORT HISTORIES
+model restore "GM07"
+[export_his('GM07')]
+;
+; ---------- GM08 -------------------------------------------------------------------------------
+model restore '04_predyn'
+[applybase('GM08')]
+; FREE-FIELD
+zone dynamic free-field on
+;
+fish define run_dyn
+   loop local step (1,19)
+     local time_Step=5*step
+     local file_name='GM08_'+string(time_Step)+'s.sav'
+    command
+      model solve time-total [time_Step]
+      [pp_calc(::zone.list)]
+      model save [file_name] compress 
+    end_command
+   end_loop
+end
+@run_dyn
+;
+model solve time-total 100.0
+model save "GM08"
+; EXPORT HISTORIES
+model restore "GM08"
+[export_his('GM08')]
+;

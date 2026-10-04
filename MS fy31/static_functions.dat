@@ -1,0 +1,769 @@
+program call 'fishtank_props' suppress
+[global Young_static_zp]
+[global Young_dyn_zp]
+[global Poisson_zp]
+[global Shear_mod_estatic]
+[global Shear_mod_dyn]
+[global Bulk_mod_static]
+[global Bulk_mod_dyn]
+[global Density_zp]
+[global Fric_zp]
+[global Coh_zp]
+[global Fric_zp_dyn]
+[global Coh_zp_dyn]
+
+;	RELAVES
+fish define Props_Tailings(ZP)
+    ;	DEFINICION DE VARIABLES 
+    local Patm = 101325.0 
+    local sye = sigma_v_effective(ZP)
+    local P_eff = math.abs(P_effective(ZP))
+    ;local e_ = 2.26*(P_eff/1000.0)^(-0.19)
+    ;Density_zp = 2650/(1+e_)
+	;	RESISTENCIA CORTANTE
+    Density_zp = 13.5*1000.0/9.81
+    Fric_zp =  30.0
+    Coh_zp = 0.0
+    ;Fric_zp_dyn = 0.0
+    ;Coh_zp_dyn = math.max(10e3,0.05*sye)
+    Fric_zp_dyn = 28.0
+    Coh_zp_dyn = 0.0
+	;	ELASTICIDAD (ESTATICO)
+    Poisson_zp = 0.33
+    local shear_velocity = math.min(300,28.6*((P_eff/1000.0)^0.35))
+    Shear_mod_estatic = 12*Patm*((P_eff/Patm)^0.9)
+    ;Shear_mod_estatic = Density_zp*(shear_velocity^2)
+    Young_static_zp = Shear_mod_estatic*2*(1+Poisson_zp)
+    Bulk_mod_static = 2*Shear_mod_estatic*(1+Poisson_zp)/(3*(1-2*Poisson_zp))
+	;	ELASTICIDAD (DINAMICO)
+    Shear_mod_dyn = Density_zp*(shear_velocity^2)
+    ;Shear_mod_dyn = 399*Patm*((P_eff/Patm)^0.71)
+    ;Shear_mod_dyn = 30*Coh_zp_dyn
+    Young_dyn_zp = Shear_mod_dyn*2*(1+Poisson_zp)
+    Bulk_mod_dyn = 2*Shear_mod_dyn*(1+Poisson_zp)/(3*(1-2*Poisson_zp))
+    ;	CHECK
+    zone.extra(ZP,15) = Shear_mod_estatic
+    zone.extra(ZP,16) = Shear_mod_dyn
+    if Shear_mod_estatic > 0
+        zone.extra(ZP,17) = Shear_mod_dyn/Shear_mod_estatic
+        zone.extra(ZP,18) = shear_velocity
+    else
+        zone.extra(ZP,17) = 0
+        zone.extra(ZP,18) = 0
+    end_if
+end
+;
+;	ARCILLA
+fish define Props_Clay(ZP)
+    ;	DEFINICION DE VARIABLES
+    local Patm = 101325.0
+    local sye = sigma_v_effective(ZP)
+	;	RESISTENCIA CORTANTE
+    Density_zp = 16.5*1000.0/9.81
+    Fric_zp =  18.0
+    Coh_zp = 0.0
+    Fric_zp_dyn = 0.0
+    Coh_zp_dyn = math.max(2.64e3,0.16*sye)
+	;	ELASTICIDAD (ESTATICO)
+    Poisson_zp = 0.39
+    local shear_velocity = 120.0
+    Shear_mod_estatic = Density_zp*(shear_velocity^2)/10.0
+    Young_static_zp = Shear_mod_estatic*2*(1+Poisson_zp)
+    Bulk_mod_static = 2*Shear_mod_estatic*(1+Poisson_zp)/(3*(1-2*Poisson_zp))
+	;	ELASTICIDAD (DINAMICO)
+    Shear_mod_dyn = Density_zp*(shear_velocity^2)
+    Young_dyn_zp = Shear_mod_dyn*2*(1+Poisson_zp)
+    Bulk_mod_dyn = 2*Shear_mod_dyn*(1+Poisson_zp)/(3*(1-2*Poisson_zp))
+    ;	CHECK
+    zone.extra(ZP,15) = Shear_mod_estatic
+    zone.extra(ZP,16) = Shear_mod_dyn
+    if Shear_mod_estatic > 0
+        zone.extra(ZP,17) = Shear_mod_dyn/Shear_mod_estatic
+        zone.extra(ZP,18) = shear_velocity
+    else
+        zone.extra(ZP,17) = 0
+        zone.extra(ZP,18) = 0
+    end_if
+end 
+
+fish define Props_Dique(ZP)
+    ;; Parametros resitentes
+    local pp =  zone.pp(ZP)
+    local S3 = math.abs(sigma_3_total(ZP))
+    local S3e = math.abs(sigma_3_effective(ZP))               
+                                                ; pensar que ocurre cuando se rotan los espfuerzos y S3 cambia al lado izquiedo del MC
+    Density_zp = 18.5*1000.0/9.81
+    Fric_zp =  47
+    Coh_zp = 6*1000   ;valore residual
+    Fric_zp_dyn = Fric_zp
+    Coh_zp_dyn = Coh_zp
+    ;; Parametros elasticos
+    local P_eff = math.abs(P_effective(ZP))       ; pensar que ocurre cuando se rotan los espfuerzos y S3 cambia al lado izquiedo del MC   
+    Poisson_zp = 0.33
+    local Patm = 101325.0                         ; referencia en pascales
+    Shear_mod_estatic = 84*Patm*((P_eff/Patm)^0.4)
+    Young_static_zp = Shear_mod_estatic*2*(1+Poisson_zp)
+    local shear_velocity = 91.5*((P_eff/1000)^0.25)
+    Shear_mod_dyn = 1773*Patm*((S3e/Patm)^0.5) 
+    Young_dyn_zp = Shear_mod_dyn*2*(1+Poisson_zp)
+    Bulk_mod_static = 2*Shear_mod_estatic*(1+Poisson_zp)/(3*(1-2*Poisson_zp))
+    Bulk_mod_dyn = 2*Shear_mod_dyn*(1+Poisson_zp)/(3*(1-2*Poisson_zp))
+    ;;;;; check props 
+    zone.extra(ZP,15) = Shear_mod_estatic
+    zone.extra(ZP,16) = Shear_mod_dyn
+    if Shear_mod_estatic > 0
+        zone.extra(ZP,17) = Shear_mod_dyn/Shear_mod_estatic
+        zone.extra(ZP,18) = shear_velocity
+    else
+        zone.extra(ZP,17) = 0
+        zone.extra(ZP,18) = 0
+    end_if
+end
+;
+;	DREN
+fish define Props_3A(ZP) ; no se consideran los materiales 3C y 3B (fuera del analisis) 
+    ;	DEFINICION DE VARIABLES
+    local Patm = 101325.0
+    local P_eff = math.abs(P_effective(ZP))
+    ;	RESISTENCIA CORTANTE
+    Density_zp = 18.0*1000.0/9.81
+    Fric_zp =  38.0
+    Coh_zp = 0.0
+    Fric_zp_dyn = Fric_zp
+    Coh_zp_dyn = 0.0
+	;	ELASTICIDAD (ESTATICO)
+    Poisson_zp = 0.33
+    local shear_velocity = 91.5*((P_eff/1000)^0.25) 
+    Shear_mod_estatic = 84*Patm*((P_eff/Patm)^0.4)
+    Young_static_zp = Shear_mod_estatic*2*(1+Poisson_zp)
+    Bulk_mod_static = 2*Shear_mod_estatic*(1+Poisson_zp)/(3*(1-2*Poisson_zp))
+	;	ELASTICIDAD (DINAMICO)
+    Shear_mod_dyn = 1773*Patm*((P_eff/Patm)^0.5)
+    Young_dyn_zp = Shear_mod_dyn*2*(1+Poisson_zp)
+    Bulk_mod_dyn = 2*Shear_mod_dyn*(1+Poisson_zp)/(3*(1-2*Poisson_zp))
+	;	CHECK
+    zone.extra(ZP,15) = Shear_mod_estatic
+    zone.extra(ZP,16) = Shear_mod_dyn
+    if Shear_mod_estatic > 0
+        zone.extra(ZP,17) = Shear_mod_dyn/Shear_mod_estatic
+        zone.extra(ZP,18) = shear_velocity
+    else
+        zone.extra(ZP,17) = 0
+        zone.extra(ZP,18) = 0
+    end_if
+end 
+
+fish define Props_3B_3C(ZP) ; no se concideran los materiales 3C y 3B (fuera del analisis) 
+    ;	DEFINICION DE VARIABLES
+    local pp =  zone.pp(ZP)
+    local S3 = math.abs(sigma_3_total(ZP))          
+                                                ; pensar que ocurre cuando se rotan los espfuerzos y S3 cambia al lado izquiedo del MC
+    Density_zp = (18.0*int(pp==0) + 20.0*int(pp>0))*101.971621
+    Fric_zp =  38.0
+    Coh_zp = 0    ;valore residual
+    Fric_zp_dyn = Fric_zp
+    Coh_zp_dyn = Coh_zp
+    ;; Parametros elasticos
+    local P_eff = math.abs(P_effective(ZP))       ; pensar que ocurre cuando se rotan los espfuerzos y S3 cambia al lado izquiedo del MC   
+    Poisson_zp = 0.33
+    local Patm = 101325.0                         ; referencia en pascales
+    Shear_mod_estatic = 84*Patm*((P_eff/Patm)^0.4)
+    Young_static_zp = Shear_mod_estatic*2*(1+Poisson_zp)
+    local shear_velocity = 91.5*((P_eff/1000)^0.25) 
+    Shear_mod_dyn = 1773*Patm*((P_eff/Patm)^0.5) 
+    Young_dyn_zp = Shear_mod_dyn*2*(1+Poisson_zp)
+    Bulk_mod_static = 2*Shear_mod_estatic*(1+Poisson_zp)/(3*(1-2*Poisson_zp))
+    Bulk_mod_dyn = 2*Shear_mod_dyn*(1+Poisson_zp)/(3*(1-2*Poisson_zp))
+    ;;;;; check props 
+    zone.extra(ZP,15) = Shear_mod_estatic
+    zone.extra(ZP,16) = Shear_mod_dyn
+    if Shear_mod_estatic > 0
+        zone.extra(ZP,17) = Shear_mod_dyn/Shear_mod_estatic
+        zone.extra(ZP,18) = shear_velocity
+    else
+        zone.extra(ZP,17) = 0
+        zone.extra(ZP,18) = 0
+    end_if
+end
+;	RELLENO COMUN (1A) Y SELECCIONADO (1B)
+fish define Props_1A_1B(ZP)
+    ;	DEFINICION DE VARIABLES
+    local Patm = 101325.0
+    local P_eff = math.abs(P_effective(ZP))
+    ;	RESISTENCIA CORTANTE
+    Density_zp = 19.5*1000.0/9.81
+    Fric_zp =  38.0
+    Coh_zp = 3e3
+    Fric_zp_dyn = Fric_zp
+    Coh_zp_dyn = 0.0
+	;	ELASTICIDAD (ESTATICO)
+    Poisson_zp = 0.33
+    local shear_velocity = 91.5*((P_eff/1000)^0.25) 
+    Shear_mod_estatic = 84*Patm*((P_eff/Patm)^0.4)
+    Young_static_zp = Shear_mod_estatic*2*(1+Poisson_zp)
+    Bulk_mod_static = 2*Shear_mod_estatic*(1+Poisson_zp)/(3*(1-2*Poisson_zp))
+	;	ELASTICIDAD (DINAMICO)
+    Shear_mod_dyn = 1773*Patm*((P_eff/Patm)^0.5)
+    Young_dyn_zp = Shear_mod_dyn*2*(1+Poisson_zp)
+    Bulk_mod_dyn = 2*Shear_mod_dyn*(1+Poisson_zp)/(3*(1-2*Poisson_zp))
+	;	CHECK
+    zone.extra(ZP,15) = Shear_mod_estatic
+    zone.extra(ZP,16) = Shear_mod_dyn
+    if Shear_mod_estatic > 0
+        zone.extra(ZP,17) = Shear_mod_dyn/Shear_mod_estatic
+        zone.extra(ZP,18) = shear_velocity
+    else
+        zone.extra(ZP,17) = 0
+        zone.extra(ZP,18) = 0
+    end_if
+end 
+
+fish define Props_1D(ZP)
+    ;; Parametros resitentes
+    local pp =  zone.pp(ZP)
+    local S3 = math.abs(sigma_3_total(ZP))   
+    local S3e = math.abs(sigma_3_effective(ZP))
+    local sye = sigma_v_effective(ZP)
+                                                ; pensar que ocurre cuando se rotan los espfuerzos y S3 cambia al lado izquiedo del MC
+    Density_zp = 20.0*1000.0/9.81
+    local pi_ = (180/math.pi())
+    local fric_val = math.tan(41.0/pi_)*(10*101325.0)^(1-0.9)*(sye)^(0.9-1)
+    Fric_zp = pi_*math.atan(fric_val)
+    ;Fric_zp = 65.465 - 3.281*math.ln(sye)
+    Coh_zp = 0    ;valore residual
+    Fric_zp_dyn = Fric_zp
+    Coh_zp_dyn = Coh_zp
+    ;; Parametros elasticos
+    local P_eff = math.abs(P_effective(ZP))       ; pensar que ocurre cuando se rotan los espfuerzos y S3 cambia al lado izquiedo del MC   
+    Poisson_zp = 0.35
+    local Patm = 101325.0                         ; referencia en pascales
+    Shear_mod_estatic = 63.16*Patm*((P_eff/Patm)^0.61)
+    Young_static_zp = Shear_mod_estatic*2*(1+Poisson_zp)
+    local shear_velocity = 384.5*((P_eff/Patm)^0.12) 
+    Shear_mod_dyn = Density_zp*(shear_velocity^2)
+    Young_dyn_zp = Shear_mod_dyn*2*(1+Poisson_zp)
+    Bulk_mod_static = 2*Shear_mod_estatic*(1+Poisson_zp)/(3*(1-2*Poisson_zp))
+    Bulk_mod_dyn = 2*Shear_mod_dyn*(1+Poisson_zp)/(3*(1-2*Poisson_zp))
+    ;;;;; check props 
+    zone.extra(ZP,15) = Shear_mod_estatic
+    zone.extra(ZP,16) = Shear_mod_dyn
+    if Shear_mod_estatic > 0
+        zone.extra(ZP,17) = Shear_mod_dyn/Shear_mod_estatic
+        zone.extra(ZP,18) = shear_velocity
+    else
+        zone.extra(ZP,17) = 0
+        zone.extra(ZP,18) = 0
+    end_if
+end 
+; ENROCADO
+fish define Props_1E_1F(ZP)
+    ;	DEFINICION DE VARIABLES     
+    local Patm = 101325.0
+    local sve = sigma_v_effective(ZP)
+    local P_eff = math.abs(P_effective(ZP))
+    ;	RESISTENCIA CORTANTE
+    Density_zp = 20.5*1000.0/9.81
+    local pi_ = (180/math.pi())
+    ;Fric_zp = (180/math.pi())*math.atan(0.5881*sve^0.0471)
+    local fric_val = math.tan(38.12/pi_)*(10*101325.0)^(1-0.95)*(sve)^(0.95-1)
+    Fric_zp = pi_*math.atan(fric_val)
+    Coh_zp = 0
+    Fric_zp_dyn = Fric_zp
+    Coh_zp_dyn = Coh_zp
+	;	ELASTICIDAD (ESTATICO)
+    Poisson_zp = 0.35
+    local shear_velocity = math.min(500,384.5*((P_eff/Patm)^0.12))
+    Shear_mod_estatic = 58.72*Patm*((P_eff/Patm)^0.58)
+    Young_static_zp = Shear_mod_estatic*2*(1+Poisson_zp)
+    Bulk_mod_static = 2*Shear_mod_estatic*(1+Poisson_zp)/(3*(1-2*Poisson_zp))
+	;	ELASTICIDAD (DINAMICO)
+    Shear_mod_dyn = Density_zp*(shear_velocity^2)
+    Young_dyn_zp = Shear_mod_dyn*2*(1+Poisson_zp)
+    Bulk_mod_dyn = 2*Shear_mod_dyn*(1+Poisson_zp)/(3*(1-2*Poisson_zp))
+	;	CHECK
+    zone.extra(ZP,15) = Shear_mod_estatic
+    zone.extra(ZP,16) = Shear_mod_dyn
+    if Shear_mod_estatic > 0
+        zone.extra(ZP,17) = Shear_mod_dyn/Shear_mod_estatic
+        zone.extra(ZP,18) = shear_velocity
+    else
+        zone.extra(ZP,17) = 0
+        zone.extra(ZP,18) = 0
+    end_if
+end 
+; ARENA LIMOSA SUELTA
+fish define Props_UG_1a(ZP)
+    ;	DEFINICION DE VARIABLES
+    local Patm = 101325.0 
+    local P_eff = math.abs(P_effective(ZP))
+    local sye = sigma_v_effective(ZP)
+    ;	RESISTENCIA CORTANTE
+    Density_zp = 17.0*1000.0/9.81
+    Fric_zp =  34.0
+    Coh_zp = 0.0
+    Fric_zp_dyn = 0.0
+    Coh_zp_dyn = 0.20*sye
+	;	ELASTICIDAD
+    Shear_mod_estatic = 0.0
+    local shear_velocity
+    Shear_mod_dyn = 0.0
+    
+	;	ELASTICIDAD
+    caseof Name_Muro 
+        case "MP"
+            Poisson_zp = 0.33
+            Shear_mod_estatic = 10.8e6
+            Young_static_zp = Shear_mod_estatic*2*(1+Poisson_zp)
+            shear_velocity = 250.0
+            Shear_mod_dyn = Density_zp*(shear_velocity^2)
+        case "MNW_MN" ; igual al principal 
+            Poisson_zp = 0.33
+            Shear_mod_estatic = 16568.0*(P_eff/1e3)^0.31*1e3
+            Young_static_zp = Shear_mod_estatic*2*(1+Poisson_zp)
+            shear_velocity = math.min(1000.0,300*((P_eff/1e3)^0.16))
+            Shear_mod_dyn = Density_zp*(shear_velocity^2)
+        case "MSW_MW_MS" 
+            Poisson_zp = 0.33
+            Shear_mod_estatic = 12.8*((P_eff/Patm)^0.37)*1.0e6
+            Young_static_zp = Shear_mod_estatic*2*(1+Poisson_zp)
+            Shear_mod_dyn = Shear_mod_estatic*10
+            shear_velocity = (Shear_mod_dyn/Density_zp)^0.5
+    end_case
+    Young_dyn_zp = Shear_mod_dyn*2*(1+Poisson_zp)
+	;	CHECK
+    zone.extra(ZP,15) = Shear_mod_estatic
+    zone.extra(ZP,16) = Shear_mod_dyn
+    
+    
+    if Shear_mod_estatic > 0
+        zone.extra(ZP,17) = Shear_mod_dyn/Shear_mod_estatic
+        zone.extra(ZP,18) = shear_velocity
+    else
+        zone.extra(ZP,17) = 0
+        zone.extra(ZP,18) = 0
+    end_if
+end 
+; ARENA LIMOSA DENSA
+fish define Props_UG_1b(ZP)
+    ;	DEFINICION DE VARIABLES
+    local Patm = 101325.0 
+    local P_eff = math.abs(P_effective(ZP))
+    ;	RESISTENCIA CORTANTE
+    Density_zp = 19.0*1000.0/9.81    
+    Coh_zp =0.0    ;valore residual
+	;	ELASTICIDAD
+    Shear_mod_estatic = 0.0
+    local shear_velocity
+    Shear_mod_dyn = 0.0
+    caseof Name_Muro 
+        case "MP"
+            Fric_zp =  34.0
+            Fric_zp_dyn = Fric_zp
+            Coh_zp_dyn = Coh_zp
+            Poisson_zp = 0.33
+            Shear_mod_estatic = math.min(88,87*((P_eff/Patm)^0.23))*1.0e6
+            Young_static_zp = Shear_mod_estatic*2*(1+Poisson_zp)
+            shear_velocity = math.min(600,680*((P_eff/Patm)^0.18))
+            Shear_mod_dyn = Density_zp*(shear_velocity^2)
+        case "MNW_MN" ;
+            Fric_zp =  39.0
+            Fric_zp_dyn = Fric_zp
+            Coh_zp_dyn = Coh_zp
+            Poisson_zp = 0.33
+            Shear_mod_estatic = 16568.0*(P_eff/1e3)^0.31*1e3
+            Young_static_zp = Shear_mod_estatic*2*(1+Poisson_zp)
+            shear_velocity = math.min(1000.0,300*((P_eff/1e3)^0.16))
+            Shear_mod_dyn = Density_zp*(shear_velocity^2)
+        case "MSW_MW_MS" 
+            Fric_zp =  39.0
+            Fric_zp_dyn = Fric_zp
+            Coh_zp_dyn = Coh_zp
+            Poisson_zp = 0.33
+            Shear_mod_estatic = 12.8*((P_eff/Patm)^0.37)*1.0e6
+            Young_static_zp = Shear_mod_estatic*2*(1+Poisson_zp)
+            Shear_mod_dyn = Shear_mod_estatic*10
+            shear_velocity = (Shear_mod_dyn/Density_zp)^0.5
+    end_case
+    Young_dyn_zp = Shear_mod_dyn*2*(1+Poisson_zp)
+	;	CHECK
+    zone.extra(ZP,15) = Shear_mod_estatic
+    zone.extra(ZP,16) = Shear_mod_dyn
+    
+    
+    if Shear_mod_estatic > 0
+        zone.extra(ZP,17) = Shear_mod_dyn/Shear_mod_estatic
+        zone.extra(ZP,18) = shear_velocity
+    else
+        zone.extra(ZP,17) = 0
+        zone.extra(ZP,18) = 0
+    end_if
+end 
+
+; GRAVA
+fish define Props_UG_2(ZP)
+    ;	DEFINICION DE VARIABLES
+    local Patm = 101325.0 
+    local P_eff = math.abs(P_effective(ZP))
+    local P_eff_3 = math.abs(P_effective_3(ZP))
+	;	ELASTICIDAD
+    Shear_mod_estatic = 0.0
+    local shear_velocity
+    Shear_mod_dyn = 0.0
+    caseof Name_Muro
+              ; pensar que ocurre cuando se rotan los espfuerzos y S3 cambia al lado izquiedo del MC   
+        case "MP"
+            Density_zp = 20.0*1000.0/9.81
+            Coh_zp = 0    ;valore residual
+            Fric_zp =  43.0
+            Fric_zp_dyn = Fric_zp
+            Coh_zp_dyn = Coh_zp
+            Poisson_zp = 0.30
+            Shear_mod_estatic = math.min(162,130*((P_eff/Patm)^0.3))*1e6
+            Young_static_zp = Shear_mod_estatic*2*(1+Poisson_zp)
+            shear_velocity = math.min(900,810*((P_eff/Patm)^0.15))
+            Shear_mod_dyn = Density_zp*(shear_velocity^2)
+        case "MNW_MN" ; igual al principal 
+            Density_zp = 22.0*1000.0/9.81
+            Coh_zp = 13e3    ;valore residual
+            Fric_zp =  43.0
+            Fric_zp_dyn = Fric_zp
+            Coh_zp_dyn = Coh_zp
+            Poisson_zp = 0.30
+            Shear_mod_estatic = 17e3*(P_eff/1e3)^0.45*1e3
+            Young_static_zp = Shear_mod_estatic*2*(1+Poisson_zp)
+            shear_velocity = math.min(1100.0,285*(P_eff/1e3)^0.22)
+            Shear_mod_dyn = Density_zp*(shear_velocity^2)
+        case "MSW_MW_MS" 
+            Density_zp = 21.0*1000.0/9.81
+            Coh_zp = 130e3
+            Fric_zp =  43.0
+            Fric_zp_dyn = Fric_zp
+            Coh_zp_dyn = Coh_zp
+            Poisson_zp = 0.30
+            Shear_mod_estatic = math.min(88.0,34*((P_eff_3/Patm)^0.76))*1e6
+            Young_static_zp = Shear_mod_estatic*2*(1+Poisson_zp)
+            shear_velocity = math.min(700, 430.0*((P_eff_3/Patm)^0.38)) 
+            Shear_mod_dyn = Density_zp*(shear_velocity^2)
+    end_case
+    Young_dyn_zp = Shear_mod_dyn*2*(1+Poisson_zp)
+	;	CHECK
+    zone.extra(ZP,15) = Shear_mod_estatic
+    zone.extra(ZP,16) = Shear_mod_dyn
+    
+    
+    if Shear_mod_estatic > 0
+        zone.extra(ZP,17) = Shear_mod_dyn/Shear_mod_estatic
+        zone.extra(ZP,18) = shear_velocity
+    else
+        zone.extra(ZP,17) = 0
+        zone.extra(ZP,18) = 0
+    end_if
+end 
+
+; ROCA FRACTURADA
+fish define Props_UG_3(ZP)
+    ;; Parametros resitentes
+    local pp =  zone.pp(ZP)
+    local S3 = math.abs(sigma_3_total(ZP))          
+                                                ; pensar que ocurre cuando se rotan los espfuerzos y S3 cambia al lado izquiedo del M
+    ;; Parametros elasticos
+    local Patm = 101325.0   
+    Shear_mod_estatic = 0.0
+    local shear_velocity
+    Shear_mod_dyn = 0.0
+    local P_eff = math.abs(P_effective(ZP))  
+    caseof Name_Muro
+             ; pensar que ocurre cuando se rotan los espfuerzos y S3 cambia al lado izquiedo del MC   
+        case "MP"
+            Density_zp = 24*101.971621
+            Poisson_zp = 0.20
+            Shear_mod_estatic = 2.2e9
+            Young_static_zp = Shear_mod_estatic*2*(1+Poisson_zp)
+            shear_velocity = 1000.0
+            Shear_mod_dyn = Density_zp*(shear_velocity^2)
+        case "MNW_MN" ; igual al principal 
+            Density_zp = 25*1000/9.81
+            Poisson_zp = 0.20
+            Shear_mod_estatic = 4.2e9
+            Young_static_zp = Shear_mod_estatic*2*(1+Poisson_zp)
+            shear_velocity = 1300.0
+            Shear_mod_dyn = Density_zp*(shear_velocity^2)
+        case "MSW_MW_MS" 
+            Density_zp = 24*101.971621
+            Poisson_zp = 0.20
+            Shear_mod_estatic = 3.234e9
+            Young_static_zp = Shear_mod_estatic*2*(1+Poisson_zp)
+            shear_velocity = 1250 
+            Shear_mod_dyn = Density_zp*(shear_velocity^2)
+    end_case
+    Young_dyn_zp = Shear_mod_dyn*2*(1+Poisson_zp)
+    ;;;;; check props 
+    zone.extra(ZP,15) = Shear_mod_estatic
+    zone.extra(ZP,16) = Shear_mod_dyn
+    
+    
+    if Shear_mod_estatic > 0
+        zone.extra(ZP,17) = Shear_mod_dyn/Shear_mod_estatic
+        zone.extra(ZP,18) = shear_velocity
+    else
+        zone.extra(ZP,17) = 0
+        zone.extra(ZP,18) = 0
+    end_if
+end 
+; ROCA SANA
+fish define Props_UG_4(ZP)
+    ;; Parametros resitentes
+    local pp =  zone.pp(ZP)
+    local S3 = math.abs(sigma_3_total(ZP))          
+                                                ; pensar que ocurre cuando se rotan los espfuerzos y S3 cambia al lado izquiedo del M
+    ;; Parametros elasticos
+    local Patm = 101325.0 
+    Shear_mod_estatic = 0.0
+    local shear_velocity
+    Shear_mod_dyn = 0.0
+    local P_eff = math.abs(P_effective(ZP)) 
+    caseof Name_Muro
+              ; pensar que ocurre cuando se rotan los espfuerzos y S3 cambia al lado izquiedo del MC   
+        case "MP"
+            Density_zp = 24*1000/9.81
+            Poisson_zp = 0.20
+            Shear_mod_estatic = 5.1e9
+            Young_static_zp = Shear_mod_estatic*2*(1+Poisson_zp)
+            shear_velocity = 1500.0
+            Shear_mod_dyn = Density_zp*(shear_velocity^2)
+        case "MNW_MN" ; igual al principal 
+            Density_zp = 25*1000/9.81
+            Poisson_zp = 0.20
+            Shear_mod_estatic = 10.4e9
+            Young_static_zp = Shear_mod_estatic*2*(1+Poisson_zp)
+            shear_velocity = 1500.0
+            Shear_mod_dyn = Density_zp*(shear_velocity^2)
+        case "MSW_MW_MS" 
+            Density_zp = 24*101.971621
+            Poisson_zp = 0.20
+            Shear_mod_estatic = 1.38e10
+            Young_static_zp = Shear_mod_estatic*2*(1+Poisson_zp)
+            shear_velocity = 2500 
+            Shear_mod_dyn = Density_zp*(shear_velocity^2)
+    end_case
+    Young_dyn_zp = Shear_mod_dyn*2*(1+Poisson_zp)
+    ;;;;; check props 
+    zone.extra(ZP,15) = Shear_mod_estatic
+    zone.extra(ZP,16) = Shear_mod_dyn
+    
+    
+    if Shear_mod_estatic > 0
+        zone.extra(ZP,17) = Shear_mod_dyn/Shear_mod_estatic
+        zone.extra(ZP,18) = shear_velocity
+    else
+        zone.extra(ZP,17) = 0
+        zone.extra(ZP,18) = 0
+    end_if
+end 
+
+fish define props_master(ZP)
+    Young_static_zp = 0
+    Young_dyn_zp = 0
+    Poisson_zp = 0
+    Shear_mod_estatic = 0
+    Bulk_mod_static = 0
+    Shear_mod_dyn = 0
+    Bulk_mod_dyn = 0
+    Density_zp = 0
+    Fric_zp = 0
+    Coh_zp = 0
+    Fric_zp_dyn = 0
+    Coh_zp_dyn = 0
+    ;
+    global name_group = zone.group(ZP,'Material')
+    caseof name_group
+        case 'relave'
+            Props_Tailings(ZP)
+        case 'arcilla'
+            Props_Clay(ZP)
+        case 'dren'
+            Props_3A(ZP)
+        case '3B'
+            Props_3B_3C(ZP)
+        case '3C'
+            Props_3B_3C(ZP)
+        case 'relleno_comun'
+            Props_1A_1B(ZP)
+        case 'relleno_selec'
+            Props_1A_1B(ZP)
+        case 'enrocado_1D'
+            Props_1D(ZP)
+        case 'enrocado'
+            Props_1E_1F(ZP)
+        case 'enrocado'
+            Props_1E_1F(ZP)
+        case 'arena_suelta'
+            Props_UG_1a(ZP)
+        case 'arena_densa'
+            Props_UG_1b(ZP)
+        case 'grava'
+            Props_UG_2(ZP)
+        case 'roca_frac'
+            Props_UG_3(ZP)
+        case 'roca_sana'
+            Props_UG_4(ZP)
+        case 'dique'
+            Props_Dique(ZP)
+    endcase
+end
+;adicionalmente se deben revizar los valores minimos alcanzables y planterar una solucion cuando los espfuerzos cambian su direccion
+
+[global Young_static_zp]
+[global Young_dyn_zp]
+[global Poisson_zp]
+[global Shear_mod_estatic]
+[global Shear_mod_dyn]
+[global Bulk_mod_static]
+[global Bulk_mod_dyn]
+[global Density_zp]
+[global Fric_zp]
+[global Coh_zp]
+[global Fric_zp_dyn]
+[global Coh_zp_dyn]
+
+fish define assign_props(ZP)
+    local name_model = zone.model(ZP)
+    props_master(ZP)
+    caseof name_model
+        case 'elastic'
+            zone.prop(ZP,'young')=Young_static_zp
+            zone.prop(ZP,'poisson')= Poisson_zp
+            zone.prop(ZP,'density')=Density_zp
+;            zone.prop(Zone_pointer,'density')=dict_props_material(name_group)('density')
+        case 'mohr-coulomb'
+            zone.prop(ZP,'young')=Young_static_zp
+            zone.prop(ZP,'poisson')= Poisson_zp
+            zone.prop(ZP,'density')=Density_zp
+;            zone.prop(Zone_pointer,'density')=dict_props_material(name_group)('density')
+            zone.prop(ZP,'friction')=Fric_zp
+            zone.prop(ZP,'cohesion')=Coh_zp
+        ; ................. case i2 code here
+        case 'ubc-hyst'
+            zone.prop(ZP,'pressure-reference') = 101325.0
+            zone.prop(ZP,'shear-maximum')=Shear_mod_estatic
+            zone.prop(ZP,'bulk')= Bulk_mod_static
+            ;zone.prop(ZP,'density')=Density_zp
+            zone.prop(ZP,'friction')=Fric_zp
+            zone.prop(ZP,'cohesion')=Coh_zp
+            caseof name_group
+                case 'enrocado'
+                    zone.prop(ZP,'exponent-stiffness') = 2.0
+                    zone.prop(ZP,'failure-ratio') = 0.9
+                    zone.prop(ZP,'factor-first') = 1.0
+                    zone.prop(ZP,'factor-reduction') = 0.0
+                    zone.prop(ZP,'exponent-reduction') = 0.0
+                case 'enrocado_1D'
+                    zone.prop(ZP,'exponent-stiffness') = 2.0
+                    zone.prop(ZP,'failure-ratio') = 0.9
+                    zone.prop(ZP,'factor-first') = 1.0
+                    zone.prop(ZP,'factor-reduction') = 0.0
+                    zone.prop(ZP,'exponent-reduction') = 0.0
+                case 'dren'
+                    zone.prop(ZP,'exponent-stiffness') = 2.0
+                    zone.prop(ZP,'failure-ratio') = 0.9
+                    zone.prop(ZP,'factor-first') = 1.0
+                    zone.prop(ZP,'factor-reduction') = 0.0
+                    zone.prop(ZP,'exponent-reduction') = 0.0
+                case 'relleno_comun'
+                    zone.prop(ZP,'exponent-stiffness') = 2.0
+                    zone.prop(ZP,'failure-ratio') = 0.9
+                    zone.prop(ZP,'factor-first') = 1.0
+                    zone.prop(ZP,'factor-reduction') = 0.0
+                    zone.prop(ZP,'exponent-reduction') = 0.0
+                case 'relleno_selec'
+                    zone.prop(ZP,'exponent-stiffness') = 2.0
+                    zone.prop(ZP,'failure-ratio') = 0.9
+                    zone.prop(ZP,'factor-first') = 1.0
+                    zone.prop(ZP,'factor-reduction') = 0.0
+                    zone.prop(ZP,'exponent-reduction') = 0.0
+            end_case
+    end_case
+;    zone.extra(Zone_pointer,2) = dict_props_material(name_group)('Vs')
+    
+end
+
+
+fish define assign_density(ZP)
+    local name_model = zone.model(ZP)
+    props_master(ZP)
+    caseof name_model
+        case 'elastic'  
+            zone.prop(ZP,'density')=Density_zp
+        case 'mohr-coulomb'
+            zone.prop(ZP,'density')=Density_zp
+        case 'ubc-hyst'
+            zone.prop(ZP,'density')=Density_zp
+    end_case 
+end
+;[assign_props(::zone.list)]
+
+;fish define test(ZP)
+; zone.extra(ZP,1)= math.abs(P_effective(ZP)) 
+;
+;end
+;[test(::zone.list())]
+
+fish define assign_props_dyn(ZP)
+    local name_model = zone.model(ZP)
+    props_master(ZP)
+    caseof name_model
+        case 'elastic'
+            zone.prop(ZP,'young')= Young_dyn_zp
+            zone.prop(ZP,'poisson')= Poisson_zp
+            zone.prop(ZP,'density')=Density_zp
+;            zone.prop(Zone_pointer,'density')=dict_props_material(name_group)('density')
+        case 'mohr-coulomb'
+            zone.prop(ZP,'young')= Young_dyn_zp
+            zone.prop(ZP,'poisson')= Poisson_zp
+            zone.prop(ZP,'density')=Density_zp
+;            zone.prop(Zone_pointer,'density')=dict_props_material(name_group)('density')
+            zone.prop(ZP,'friction')=Fric_zp_dyn
+            zone.prop(ZP,'cohesion')=Coh_zp_dyn
+        case 'ubc-hyst'
+            zone.prop(ZP,'pressure-reference') = 101325.0
+            zone.prop(ZP,'shear-maximum')=Shear_mod_dyn
+            zone.prop(ZP,'bulk')= Bulk_mod_dyn
+            zone.prop(ZP,'density')=Density_zp
+            zone.prop(ZP,'friction')=Fric_zp_dyn
+            zone.prop(ZP,'cohesion')=Coh_zp_dyn
+            caseof name_group
+                case 'enrocado'
+                    zone.prop(ZP,'exponent-stiffness') = 2.0
+                    zone.prop(ZP,'failure-ratio') = 0.9
+                    zone.prop(ZP,'factor-first') = 1.0
+                    zone.prop(ZP,'factor-reduction') = 0.0
+                    zone.prop(ZP,'exponent-reduction') = 0.0
+                case 'enrocado_1D'
+                    zone.prop(ZP,'exponent-stiffness') = 2.0
+                    zone.prop(ZP,'failure-ratio') = 0.9
+                    zone.prop(ZP,'factor-first') = 1.0
+                    zone.prop(ZP,'factor-reduction') = 0.0
+                    zone.prop(ZP,'exponent-reduction') = 0.0
+                case 'dren'
+                    zone.prop(ZP,'exponent-stiffness') = 2.0
+                    zone.prop(ZP,'failure-ratio') = 0.9
+                    zone.prop(ZP,'factor-first') = 1.0
+                    zone.prop(ZP,'factor-reduction') = 0.0
+                    zone.prop(ZP,'exponent-reduction') = 0.0
+                case 'relleno_comun'
+                    zone.prop(ZP,'exponent-stiffness') = 2.0
+                    zone.prop(ZP,'failure-ratio') = 0.9
+                    zone.prop(ZP,'factor-first') = 1.0
+                    zone.prop(ZP,'factor-reduction') = 0.0
+                    zone.prop(ZP,'exponent-reduction') = 0.0
+                case 'relleno_selec'
+                    zone.prop(ZP,'exponent-stiffness') = 2.0
+                    zone.prop(ZP,'failure-ratio') = 0.9
+                    zone.prop(ZP,'factor-first') = 1.0
+                    zone.prop(ZP,'factor-reduction') = 0.0
+                    zone.prop(ZP,'exponent-reduction') = 0.0
+            end_case
+    end_case
+;    zone.extra(Zone_pointer,2) = dict_props_material(name_group)('Vs')
+    
+end

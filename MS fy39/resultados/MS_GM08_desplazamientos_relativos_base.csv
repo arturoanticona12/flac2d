@@ -1,0 +1,6 @@
+punto,ux_final,uy_final,asentamiento_final,asentamiento_max,ux_abs_max
+A borde aguas arriba,0.113,-0.203,0.203,0.203,0.113
+B eje,0.594,-0.223,0.223,0.223,0.594
+C borde aguas abajo,1.075,-0.544,0.544,0.544,1.075
+T mitad del talud,1.210,-0.511,0.511,0.511,1.210
+P pie del talud,0.618,0.072,-0.000,0.001,0.618

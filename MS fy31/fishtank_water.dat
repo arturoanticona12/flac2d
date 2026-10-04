@@ -1,0 +1,85 @@
+fish define set_pp_zero(GP)
+    gp.pp(GP) = 0
+end
+
+fish define set_water(Z)
+    local gp_list = zone.gp(Z)
+    set_pp_zero(::gp_list)
+end
+
+fish define set_pp_zero_ID(ID)
+    local pointer = zone.find(ID)
+    set_water(pointer)
+end
+
+fish define set_negative_pp(GP)
+    if gp.pp(GP) < 0
+        gp.pp(GP) = 0
+    end_if
+end
+
+fish define fix_saturation(GP)
+    if gp.pp(GP) <= 0
+        gp.sat(GP) = 0
+    end_if
+end
+
+fish define save_pp(Zone_Pointer)
+        local ini_pp = zone.pp(Zone_Pointer)
+        local ini_syy = zone.stress.effective.yy(Zone_Pointer) 
+        local ini_sxy = zone.stress.xy(Zone_Pointer) 
+        zone.extra(Zone_Pointer,2) = ini_pp ; Initial PP
+        zone.extra(Zone_Pointer,3) = ini_syy ; Initial Effective Vertical Stress
+        zone.extra(Zone_Pointer,4)=-sigma_3_effective(Zone_Pointer)
+end
+;[save_pp(::zone.list)]
+fish define ini_PPFinal
+    loop foreach local j gp.list
+	 local _GPID=gp.id(j)
+     gp.sat(j) =0.0
+     gp.pp(j)  = table.y('205',_GPID)
+	  if gp.pp(j) > 100.0
+	   gp.sat(j)=1.0
+	   gp.fluid.modulus(j) = 0.0
+	   gp.fluid.tension(j) = -101300.0
+	  endif
+      if gp.isgroup(j,'Top',"Skin")=True then
+       gp.pp(j)=0.0
+       gp.sat(j) =0.0
+       gp.fluid.modulus(j) = 0.0
+       gp.fluid.tension(j) = 0.0
+      endif
+    endloop
+end
+;
+fish define save_pp_GP(GP)     
+    gp.extra(GP,1) = gp.pp(GP)
+end
+;
+fish define fix_pp(GP)
+    if gp.pp(GP) <= 0
+        if gp.group(GP,'water') == 'fix'
+            gp.pp(GP) = gp.extra(GP,1)
+        end_if
+    end_if
+end
+;
+fish define ini_PPFinal
+    loop foreach local j gp.list
+	 local _GPID=gp.id(j)
+     gp.sat(j) =0.0
+     gp.pp(j)  = table.y('205',_GPID)
+	  if gp.pp(j) > 100.0
+	   gp.sat(j)=1.0
+	   gp.fluid.modulus(j) = 0.0
+	   gp.fluid.tension(j) = -101300.0
+	  endif
+      if gp.isgroup(j,'Top',"Skin")=True then
+       gp.pp(j)=0.0
+       gp.sat(j) =0.0
+       gp.fluid.modulus(j) = 0.0
+       gp.fluid.tension(j) = 0.0
+      endif
+    endloop
+end
+;

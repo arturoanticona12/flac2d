@@ -1,0 +1,50 @@
+;
+fish define export_his_disp(name,GM)
+	command
+		history export [name + '_disp_x'] vs 'time' file [name + '_disp_x_' + GM + '.txt']
+		history export [name + '_disp_y'] vs 'time' file [name + '_disp_y_' + GM + '.txt']
+	end_command
+end
+;
+fish define export_his_acc(name,GM)
+	command
+		history export [name + '_acc_x'] vs 'time' file [name + '_acc_x_' + GM + '.txt']
+	end_command
+end
+;
+fish define export_his_stress(name,GM)
+	command
+		history export [name + '_sstress'] vs [name + '_sstrain'] file [name + '_ss_' + GM + '.txt']
+		history export [name + '_pp'] vs 'time' file [name + '_pp_' + GM + '.txt']
+		history export [name + '_s3'] vs 'time' file [name + '_s3_' + GM + '.txt']
+		history export [name + '_ru'] vs 'time' file [name + '_ru_' + GM + '.txt']
+		history export [name + '_csr'] vs 'time' file [name + '_csr._' + GM + '.txt']
+	end_command
+end
+;
+fish define export_his(GM)
+    command
+        ;@export_his_acc('A', GM)
+        @export_his_acc('A', GM)
+        @export_his_acc('B', GM)
+        @export_his_acc('C', GM)
+        @export_his_acc('Bg', GM)
+        @export_his_acc('Bp', GM)
+        @export_his_acc('Bb', GM)
+        ;@export_his_acc('C', GM)
+        ;@export_his_acc('FF', GM)
+        ;@export_his_acc('FFp', GM)
+        ;@export_his_acc('FFb', GM)
+        ;
+        @export_his_disp('A', GM)
+        @export_his_disp('B', GM)
+        @export_his_disp('C', GM)
+        @export_his_disp('T', GM)
+        @export_his_disp('P', GM)
+        @export_his_disp('Bb', GM)
+        ;
+        ;@export_his_stress('M', GM)
+        ;
+    end_command
+end
+;

@@ -1,0 +1,7 @@
+referencia,punto,PGA,PGA_bruto,Sa_max,T_Sa_max,Fourier_pico,f_pico
+afloramiento,A borde aguas arriba,0.842,1.116,2.445,0.469,2.605,2.366
+afloramiento,B eje,0.777,1.068,2.564,0.469,2.875,2.366
+afloramiento,C borde aguas abajo,0.968,1.251,2.490,0.469,2.836,2.366
+base,A borde aguas arriba,2.567,2.999,6.054,0.128,7.753,7.943
+base,B eje,2.368,2.870,5.029,0.117,7.404,7.816
+base,C borde aguas abajo,2.953,3.363,6.866,0.128,9.341,7.691

@@ -1,0 +1,438 @@
+; ----------- PREDYN ------------
+model restore '01_static_2-stage02'
+;zone cmodel assign elastic range group 'Material=relave'
+program call 'static_functions.dat' suppress
+;; DYNAMIC PROPERTIES
+[assign_props_dyn(::zone.list)]
+model solve
+[Ini_K0(::zone.list)]
+[Ini_Kalpha(::zone.list)]
+;
+zone gridpoint initialize fluid-modulus 2E9
+zone gridpoint initialize fluid-tension -101325.0
+;
+[assign_props_dyn(::zone.list)]
+model solve
+[Ini_K0(::zone.list)]
+[Ini_Kalpha(::zone.list)]
+;
+zone cmodel assign elastic range group 'Block=Block 2'
+zone cmodel assign elastic range group 'Block=Block 3'
+[assign_props_dyn(::zone.list)]
+model solve
+[Ini_K0(::zone.list)]
+[Ini_Kalpha(::zone.list)]
+;
+model save '03_predyn'
+;
+; ----------- DYN ---------------
+model restore '03_predyn'
+program call 'fishtank_dyn' suppress
+;
+model dynamic active=on
+model large-strain on
+;zone dynamic multi-step on
+model dynamic time-total 0.0
+;
+;zone nodal-mixed-discretization off
+;zone gridpoint initialize fluid-modulus 2E9
+;zone gridpoint initialize fluid-tension -101325.0
+;
+table 'GM01' import 'GM01.vel'
+table 'GM02' import 'GM02.vel'
+table 'GM03' import 'GM03.vel'
+table 'GM04' import 'GM04.vel'
+table 'GM05' import 'GM05.vel'
+table 'GM06' import 'GM06.vel'
+table 'GM07' import 'GM07.vel'
+table 'GM08' import 'GM08.vel'
+table 'GM09' import 'GM09.vel'
+table 'GM10' import 'GM10.vel'
+table 'GM11' import 'GM11.vel'
+table 'GM12' import 'GM12.vel'
+table 'GM13' import 'GM13.vel'
+table 'GM14' import 'GM14.vel'
+;
+fish define applybase(table_ID)
+    local unit_corr = 1.0
+    local vs_base = 2500.0
+    local dens_base = 24*101.971621
+    local base_mult = 0.85*vs_base*dens_base*unit_corr
+    command
+        zone face apply stress-xy [base_mult] table [table_ID] range group 'Bottom'
+    end_command
+end
+;
+history delete
+call 'Hist_points.dat' ;Tiene Hist de tiempo
+call 'export_his.dat'
+;
+zone gridpoint initialize velocity (0,0)
+zone gridpoint initialize displacement (0,0)
+;zone gridpoint free velocity-x 
+;zone gridpoint free velocity-y
+;zone initialize state 0
+; DAMPING
+[global _damp = 0.005]  ; target damping level as decimal
+[global eta1 = -7.90e-05*(_damp*100)^2+8.09e-03*(_damp*100)]  ; 0.5 Hz Component
+[global eta2 =  2.03e-04*(_damp*100)^2+5.69e-03*(_damp*100)]  ; 3.5 Hz Component
+[global eta3 =  4.69e-04*(_damp*100)^2+8.06e-03*(_damp*100)]  ; 25.0 Hz Component
+;zone dynamic damping maxwell ([eta1] 0.5)([eta2] 3.5)([eta3] 25.0) ; --- Damping ---
+zone dynamic damping rayleigh 0.005 2.5;
+;
+; QUIET BOUNDARY
+zone face apply quiet range group 'Bottom'
+; SAVE PRE-SHAKE
+model save '04_predyn'
+;
+; ---------- GM07 -------------------------------------------------------------------------------
+model restore '04_predyn'
+[applybase('GM07')]
+; FREE-FIELD
+zone dynamic free-field on
+;
+fish define run_dyn
+   loop local step (1,19)
+     local time_Step=5*step
+     local file_name='GM07_'+string(time_Step)+'s.sav'
+    command
+      model solve time-total [time_Step]
+      [pp_calc(::zone.list)]
+      model save [file_name] compress 
+    end_command
+   end_loop
+end
+@run_dyn
+;
+model solve time-total 100.0
+model save "GM07"
+; EXPORT HISTORIES
+model restore "GM07"
+[export_his('GM07')]
+;
+; ---------- GM08 -------------------------------------------------------------------------------
+model restore '04_predyn'
+[applybase('GM08')]
+; FREE-FIELD
+zone dynamic free-field on
+;
+fish define run_dyn
+   loop local step (1,19)
+     local time_Step=5*step
+     local file_name='GM08_'+string(time_Step)+'s.sav'
+    command
+      model solve time-total [time_Step]
+      [pp_calc(::zone.list)]
+      model save [file_name] compress 
+    end_command
+   end_loop
+end
+@run_dyn
+;
+model solve time-total 100.0
+model save "GM08"
+; EXPORT HISTORIES
+model restore "GM08"
+[export_his('GM08')]
+;
+; ---------- GM11 -------------------------------------------------------------------------------
+model restore '04_predyn'
+[applybase('GM11')]
+; FREE-FIELD
+zone dynamic free-field on
+;
+fish define run_dyn
+   loop local step (1,10)
+     local time_Step=5*step
+     local file_name='GM11'+string(time_Step)+'s.sav'
+    command
+      model solve time-total [time_Step]
+      [pp_calc(::zone.list)]
+      model save [file_name] compress 
+    end_command
+   end_loop
+end
+@run_dyn
+;
+model solve time-total 55.0
+model save "GM11"
+; EXPORT HISTORIES
+model restore "GM11"
+[export_his('GM11')]
+;
+; ---------- GM12 -------------------------------------------------------------------------------
+model restore '04_predyn'
+[applybase('GM12')]
+; FREE-FIELD
+zone dynamic free-field on
+;
+fish define run_dyn
+   loop local step (1,10)
+     local time_Step=5*step
+     local file_name='GM12'+string(time_Step)+'s.sav'
+    command
+      model solve time-total [time_Step]
+      [pp_calc(::zone.list)]
+      model save [file_name] compress 
+    end_command
+   end_loop
+end
+@run_dyn
+;
+model solve time-total 55.0
+model save "GM12"
+; EXPORT HISTORIES
+model restore "GM12"
+[export_his('GM12')]
+;
+
+; ---------- GM01 -------------------------------------------------------------------------------
+model restore '04_predyn'
+[applybase('GM01')]
+; FREE-FIELD
+zone dynamic free-field on
+;
+fish define run_dyn
+   loop local step (1,25)
+     local time_Step=5*step
+     local file_name='GM01_'+string(time_Step)+'s.sav'
+    command
+      model solve time-total [time_Step]
+      [pp_calc(::zone.list)]
+      model save [file_name] compress 
+    end_command
+   end_loop
+end
+@run_dyn
+;
+model solve time-total 128.0
+model save "GM01"
+; EXPORT HISTORIES
+model restore "GM01"
+[export_his('GM01')]
+;
+; ---------- GM02 -------------------------------------------------------------------------------
+model restore '04_predyn'
+[applybase('GM02')]
+; FREE-FIELD
+zone dynamic free-field on
+;
+fish define run_dyn
+   loop local step (1,25)
+     local time_Step=5*step
+     local file_name='GM02_'+string(time_Step)+'s.sav'
+    command
+      model solve time-total [time_Step]
+      [pp_calc(::zone.list)]
+      model save [file_name] compress 
+    end_command
+   end_loop
+end
+@run_dyn
+;
+model solve time-total 128.0
+model save "GM02"
+; EXPORT HISTORIES
+model restore "GM02"
+[export_his('GM02')]
+;
+; ---------- GM05 -------------------------------------------------------------------------------
+model restore '04_predyn'
+[applybase('GM05')]
+; FREE-FIELD
+zone dynamic free-field on
+;
+fish define run_dyn
+   loop local step (1,15)
+     local time_Step=5*step
+     local file_name='GM05_'+string(time_Step)+'s.sav'
+    command
+      model solve time-total [time_Step]
+      [pp_calc(::zone.list)]
+      model save [file_name] compress 
+    end_command
+   end_loop
+end
+@run_dyn
+;
+model solve time-total 78.0
+model save "GM05"
+; EXPORT HISTORIES
+model restore "GM05"
+[export_his('GM05')]
+;
+; ---------- GM06 -------------------------------------------------------------------------------
+model restore '04_predyn'
+[applybase('GM06')]
+; FREE-FIELD
+zone dynamic free-field on
+;
+fish define run_dyn
+   loop local step (1,15)
+     local time_Step=5*step
+     local file_name='GM06_'+string(time_Step)+'s.sav'
+    command
+      model solve time-total [time_Step]
+      [pp_calc(::zone.list)]
+      model save [file_name] compress 
+    end_command
+   end_loop
+end
+@run_dyn
+;
+model solve time-total 78.0
+model save "GM06"
+; EXPORT HISTORIES
+model restore "GM06"
+[export_his('GM06')]
+;
+; ---------- GM09 -------------------------------------------------------------------------------
+model restore '04_predyn'
+[applybase('GM09')]
+; FREE-FIELD
+zone dynamic free-field on
+;
+fish define run_dyn
+   loop local step (1,15)
+     local time_Step=5*step
+     local file_name='GM09_'+string(time_Step)+'s.sav'
+    command
+      model solve time-total [time_Step]
+      [pp_calc(::zone.list)]
+      model save [file_name] compress 
+    end_command
+   end_loop
+end
+@run_dyn
+;
+model solve time-total 76.0
+model save "GM09"
+; EXPORT HISTORIES
+model restore "GM09"
+[export_his('GM09')]
+;
+; ---------- GM10 -------------------------------------------------------------------------------
+model restore '04_predyn'
+[applybase('GM10')]
+; FREE-FIELD
+zone dynamic free-field on
+;
+fish define run_dyn
+   loop local step (1,15)
+     local time_Step=5*step
+     local file_name='GM10'+string(time_Step)+'s.sav'
+    command
+      model solve time-total [time_Step]
+      [pp_calc(::zone.list)]
+      model save [file_name] compress 
+    end_command
+   end_loop
+end
+@run_dyn
+;
+model solve time-total 76.0
+model save "GM10"
+; EXPORT HISTORIES
+model restore "GM10"
+[export_his('GM10')]
+;
+; ---------- GM13 -------------------------------------------------------------------------------
+model restore '04_predyn'
+[applybase('GM13')]
+; FREE-FIELD
+zone dynamic free-field on
+;
+fish define run_dyn
+   loop local step (1,23)
+     local time_Step=5*step
+     local file_name='GM13'+string(time_Step)+'s.sav'
+    command
+      model solve time-total [time_Step]
+      [pp_calc(::zone.list)]
+      model save [file_name] compress 
+    end_command
+   end_loop
+end
+@run_dyn
+;
+model solve time-total 118.0
+model save "GM13"
+; EXPORT HISTORIES
+model restore "GM13"
+[export_his('GM13')]
+;
+; ---------- GM14 -------------------------------------------------------------------------------
+model restore '04_predyn'
+[applybase('GM14')]
+; FREE-FIELD
+zone dynamic free-field on
+;
+fish define run_dyn
+   loop local step (1,23)
+     local time_Step=5*step
+     local file_name='GM14'+string(time_Step)+'s.sav'
+    command
+      model solve time-total [time_Step]
+      [pp_calc(::zone.list)]
+      model save [file_name] compress 
+    end_command
+   end_loop
+end
+@run_dyn
+;
+model solve time-total 118.0
+model save "GM14"
+; EXPORT HISTORIES
+model restore "GM14"
+[export_his('GM14')]
+;
+; ---------- GM03 -------------------------------------------------------------------------------
+model restore '04_predyn'
+[applybase('GM03')]
+; FREE-FIELD
+zone dynamic free-field on
+;
+fish define run_dyn
+   loop local step (1,8)
+     local time_Step=5*step
+     local file_name='GM03_'+string(time_Step)+'s.sav'
+    command
+      model solve time-total [time_Step]
+      [pp_calc(::zone.list)]
+      model save [file_name] compress 
+    end_command
+   end_loop
+end
+@run_dyn
+;
+model solve time-total 45.0
+model save "GM03"
+; EXPORT HISTORIES
+model restore "GM03"
+[export_his('GM03')]
+;
+; ---------- GM04 -------------------------------------------------------------------------------
+model restore '04_predyn'
+[applybase('GM04')]
+; FREE-FIELD
+zone dynamic free-field on
+;
+fish define run_dyn
+   loop local step (1,8)
+     local time_Step=5*step
+     local file_name='GM04_'+string(time_Step)+'s.sav'
+    command
+      model solve time-total [time_Step]
+      [pp_calc(::zone.list)]
+      model save [file_name] compress 
+    end_command
+   end_loop
+end
+@run_dyn
+;
+model solve time-total 45.0
+model save "GM04"
+; EXPORT HISTORIES
+model restore "GM04"
+[export_his('GM04')]
+;

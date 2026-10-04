@@ -1,0 +1,82 @@
+fish define ini_disp_vel(Stage_Tailings)
+    command
+       zone gridpoint initialize displacement 0 0 range group [Stage_Tailings]
+       zone gridpoint initialize velocity 0 0 range group [Stage_Tailings]
+    end_command
+end
+;
+fish define Ini_K0(pointer_zone)
+    if zone.model(pointer_zone) != 'null' then
+        local pp = zone.pp(pointer_zone)
+        local esxx = zone.stress.effective.xx(pointer_zone)
+        local esyy = zone.stress.effective.yy(pointer_zone)
+        local sxx = zone.stress.xx(pointer_zone)
+        local syy = zone.stress.yy(pointer_zone)
+        local K0
+        if syy+pp = 0 then
+            K0 = 0.5
+        else
+            K0 = (sxx+pp)/(syy+pp)
+        endif
+        zone.extra(pointer_zone,30) = K0
+    endif
+end
+;
+fish define Check_K0(pointer_zone)
+    local Kmax = 1.0
+    
+    if zone.model(pointer_zone) != 'null' then
+        local pp = zone.pp(pointer_zone)
+        local sxx = zone.stress.xx(pointer_zone)
+        local syy = zone.stress.yy(pointer_zone)
+        local esxx = sxx+pp
+        local esyy = syy+pp
+        ;
+        if esyy = 0
+            esyy = -0.1
+        endif
+        ;
+        local K0_old = (esxx/esyy)
+        ;
+        local pp1 = zone.pp(pointer_zone)
+        local sxx1 = zone.stress.xx(pointer_zone)
+        local syy1 = zone.stress.yy(pointer_zone)
+        ;
+        ;if K0_old < 0
+        ;    local new_sxx11 = -1*(K0_old)*(syy1+pp1)-pp1
+        ;    zone.stress.xx(pointer_zone)=new_sxx11
+            ;
+        ;    local pp22 = zone.pp(pointer_zone)
+        ;    local sxx22 = zone.stress.xx(pointer_zone)
+        ;    local syy22 = zone.stress.yy(pointer_zone)
+            ;
+        ;    local K0_11 = math.abs((sxx22+pp22)/(syy22+pp22))
+        ;    zone.extra(pointer_zone,30) = K0_11
+        ;endif
+        if K0_old > Kmax
+            local new_sxx1 = (Kmax)*(syy1+pp1)-pp1
+            zone.stress.xx(pointer_zone)=new_sxx1
+        endif
+        ;
+        local pp2 = zone.pp(pointer_zone)
+        local sxx2 = zone.stress.xx(pointer_zone)
+        local syy2 = zone.stress.yy(pointer_zone)
+        ;
+        local K0_1 = math.abs((sxx2+pp2)/(syy2+pp2))
+        zone.extra(pointer_zone,30) = K0_1
+    endif
+end
+;
+fish define Ini_Kalpha(pointer_zone)
+    local Kalpha
+    if zone.model(pointer_zone) != 'null' then
+        local esyy = zone.stress.effective.yy(pointer_zone)
+        local sxy = zone.stress.xy(pointer_zone)
+        if esyy = 0 then
+            Kalpha = 0.1
+        else
+            Kalpha = -sxy/esyy
+        endif
+        zone.extra(pointer_zone,31) = Kalpha
+    endif
+end

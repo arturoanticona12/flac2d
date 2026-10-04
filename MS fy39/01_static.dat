@@ -1,0 +1,412 @@
+;---------------------------------------------------------------------------------
+; BHP Spence - Muro Norte
+; FLAC 2D Analysis - Model Set Up
+; By: Wilson Anticona 
+; Date: November 2025
+; All units in m-sec
+;---------------------------------------------------------------------------------
+;   MODEL SETUP
+model new
+model restore '00_GEO_MS_1646'
+;
+model large-strain off
+fish automatic-create off ; VARIABLE LOCAL/GLOBAL
+model title "Spence_MS"
+;
+model configure dynamic
+model configure fluid
+model configure plugins
+;
+;zone select off range use-hidden
+zone cmodel load "cmodelubchyst009.dll"
+zone face skin
+; FY39: grupos de borde por POSICION (skin los numera East1/East2 con taludes a 45 grados exactos)
+zone face group 'East' slot 'Skin' range position-x 258.844 258.864
+zone face group 'West' slot 'Skin' range position-x -200.840 -200.820
+zone face group 'Bottom' slot 'Skin' range position-y 1532.990 1533.010
+zone attach by-face
+zone face apply velocity-normal 0.0 range group 'East' or 'West'
+model gravity 9.81
+;
+[Global Name_Muro = "MSW_MW_MS" ];"MSW_MW_MS" ] ;"MP" "MNW" "MNE" 
+program call 'fishtank' suppress
+program call 'static_functions' suppress
+program call 'fishtank_water' suppress
+program call '_pp_muro_fy39.fis' suppress   ; FY39: reemplaza los 'range id' de la malla FY31
+[global cara_x = list.sequence(-50.830, -46.830, -36.230, -21.421, -19.431, -13.462, -11.472, -9.483, -7.500, 18.500)]   ; cara aguas arriba (exterior del 1A), y creciente
+[global cara_y = list.sequence(1611.257, 1613.257, 1618.557, 1626.000, 1627.000, 1630.000, 1631.000, 1632.000, 1633.000, 1646.000)]
+[global y_base_muro = 1611.257]
+;
+geometry import 'FLAC MS FY39 WT1.dxf'
+geometry import 'FLAC MS FY39 WT2.dxf'
+geometry import 'FLAC MS FY39 WT3.dxf'
+geometry import 'FLAC MS FY39 WT4.dxf'
+geometry import 'FLAC MS FY39 WT5.dxf'
+geometry import 'FLAC MS FY39 WT6.dxf'
+;
+;   BOUNDARY CONDITIONS
+;zone face apply velocity-normal 0 range group 'East' or 'West'
+;zone face apply velocity (0,0) range group 'Bottom'
+zone gridpoint fix velocity-x range group 'East' or 'West' or 'Bottom'
+zone gridpoint fix velocity-y range group 'Bottom'
+;
+model mechanical active on
+model dynamic active off
+model fluid active off
+;
+zone mechanical damping combined
+model history mechanical unbalanced-maximum 
+model history mechanical ratio 
+model history mechanical convergence
+;
+; ------------------------------------------------------------------
+; STAGE 0: BEDROCK (STATIC)
+zone cmodel assign null
+zone cmodel assign elastic range group "Material=roca_sana"
+zone cmodel assign elastic range group "Material=roca_frac"
+zone cmodel assign elastic range group "Material=grava"
+zone cmodel assign elastic range group "Material=arena_densa"
+[assign_density(::zone.list)]
+zone initialize-stresses ratio 0.5 range group "Material=roca_sana"
+zone initialize-stresses ratio 0.5 range group "Material=roca_frac"
+zone initialize-stresses ratio 0.5 range group "Material=grava"
+zone initialize-stresses ratio 0.5 range group "Material=arena_densa"
+[assign_props(::zone.list)]
+model solve elastic only
+zone gridpoint initialize displacement (0,0)
+[Ini_K0(::zone.list)]
+[Ini_Kalpha(::zone.list)]
+; K0
+zone initialize-stresses ratio 0.5 range group "Material=roca_sana"
+zone initialize-stresses ratio 0.5 range group "Material=roca_frac"
+zone initialize-stresses ratio 0.5 range group "Material=grava"
+zone initialize-stresses ratio 0.5 range group "Material=arena_densa"
+; MC
+zone cmodel assign mohr-coulomb range union group 'Construction=grava' ...
+                                            group 'Construction=arena_densa'
+;zone cmodel assign elastic range group "Block=Block 8"
+; SOLVE MODEL
+[assign_props(::zone.list)]
+model solve
+zone gridpoint initialize displacement (0,0)
+[Ini_K0(::zone.list)]
+[Ini_Kalpha(::zone.list)]
+; MODEL SAVE
+model save "01_static_0-bedrock"
+;
+; ------------------------------------------------------------------
+; ------------------------------------------------------------------
+; STAGE 2: STATIC
+; RESTORE
+model restore "01_static_0-bedrock"
+; UN-NULL
+zone cmodel assign elastic range union group 'Construction=relleno_comun_1' ...
+                                       group 'Construction=enrocado_1' ...
+                                       group 'Construction=relave_1'
+; DENSITY
+[assign_density(::zone.list)]
+; PORE-PRESSURE
+zone fluid cmodel assign isotropic
+zone initialize fluid-density 1000
+zone gridpoint initialize fluid-modulus 0
+zone gridpoint initialize fluid-tension 0
+zone gridpoint initialize saturation 1
+zone water density 1000
+zone water set 'FLAC MS FY39 WT1'
+zone gridpoint initialize pore-pressure 0.0 range geometry-space 'FLAC MS FY39 WT1' count 1 direction (-1,0)
+zone gridpoint initialize pore-pressure 0.0 range group 'Top'
+[pp_cero_muro(cara_x, cara_y, y_base_muro, 0)]
+;zone gridpoint initialize pore-pressure 0.0 range id 7325
+;
+[set_negative_pp(::gp.list)]
+[fix_saturation(::gp.list)]
+[save_pp_GP(::gp.list)]
+; K0
+zone initialize-stresses ratio 0.5 range union group 'Construction=relleno_comun_1' ...
+                                       group 'Construction=enrocado_1' ...
+                                       group 'Construction=relave_1'
+; SOLVE ELASTIC
+[assign_props(::zone.list)]
+;;[ini_disp_vel("relave_1")]
+model solve elastic only
+[Ini_K0(::zone.list)]
+[Ini_Kalpha(::zone.list)]
+; K0
+zone initialize-stresses ratio 0.5 range union group 'Construction=relleno_comun_1' ...
+                                       group 'Construction=enrocado_1' ...
+                                       group 'Construction=relave_1'
+; MC - UBCHYST
+zone cmodel assign mohr-coulomb range group 'Construction=relave_1'
+zone cmodel assign ubc-hyst range union group 'Construction=relleno_comun_1' ...
+                                        group 'Construction=enrocado_1'
+; SOLVE MODEL
+[assign_props(::zone.list)]
+;[ini_disp_vel("relave_1")]
+model solve
+[Ini_K0(::zone.list)]
+[Ini_Kalpha(::zone.list)]
+; SAVE STAGE
+model save "01_static_1-stage01"
+;
+; ------------------------------------------------------------------
+; STAGE 3: STATIC
+; RESTORE
+model restore "01_static_1-stage01"
+; UN-NULL
+zone cmodel assign elastic range union group 'Construction=enrocado_2' ...
+                                       group 'Construction=relleno_comun_2' ...
+                                       group 'Construction=relave_2'
+; DENSITY
+[assign_density(::zone.list)]
+; PORE-PRESSURE
+zone fluid cmodel assign isotropic
+zone initialize fluid-density 1000
+zone gridpoint initialize fluid-modulus 0
+zone gridpoint initialize fluid-tension 0
+zone gridpoint initialize saturation 1
+zone water density 1000
+zone water set 'FLAC MS FY39 WT2'
+zone gridpoint initialize pore-pressure 0.0 range geometry-space 'FLAC MS FY39 WT2' count 1 direction (-1,0)
+zone gridpoint initialize pore-pressure 0.0 range group 'Top'
+[pp_cero_muro(cara_x, cara_y, y_base_muro, 0)]
+;zone gridpoint initialize pore-pressure 0.0 range id 7123
+;
+[set_negative_pp(::gp.list)]
+[fix_saturation(::gp.list)]
+[save_pp_GP(::gp.list)]
+; K0
+zone initialize-stresses ratio 0.5 range union group 'Construction=enrocado_2' ...
+                                       group 'Construction=relleno_comun_2' ...
+                                       group 'Construction=relave_2'
+; SOLVE ELASTIC
+[assign_props(::zone.list)]
+;[ini_disp_vel("relave_2")]
+model solve elastic only
+[Ini_K0(::zone.list)]
+[Ini_Kalpha(::zone.list)]
+; K0
+zone initialize-stresses ratio 0.5 range union group 'Construction=enrocado_2' ...
+                                       group 'Construction=relleno_comun_2' ...
+                                       group 'Construction=relave_2'
+; MC - UBCHYST
+zone cmodel assign mohr-coulomb range group 'Construction=relave_2'
+zone cmodel assign ubc-hyst range union group 'Construction=enrocado_2' ...
+                                        group 'Construction=relleno_comun_2'
+; SOLVE MODEL
+[assign_props(::zone.list)]
+;[ini_disp_vel("relave_2")]
+model solve
+[Ini_K0(::zone.list)]
+[Ini_Kalpha(::zone.list)]
+; SAVE STAGE
+model save "01_static_2-stage02"
+;
+; ------------------------------------------------------------------
+; STAGE 4: STATIC
+; RESTORE
+model restore "01_static_2-stage02"
+; UN-NULL
+zone cmodel assign elastic range union group 'Construction=enrocado_3' ...
+                                       group 'Construction=relleno_comun_3' ...
+                                       group 'Construction=relave_3'
+; DENSITY
+[assign_density(::zone.list)]
+; PORE-PRESSURE
+zone fluid cmodel assign isotropic
+zone initialize fluid-density 1000
+zone gridpoint initialize fluid-modulus 0
+zone gridpoint initialize fluid-tension 0
+zone gridpoint initialize saturation 1
+zone water density 1000
+zone water set 'FLAC MS FY39 WT3'
+zone gridpoint initialize pore-pressure 0.0 range geometry-space 'FLAC MS FY39 WT3' count 1 direction (-1,0)
+zone gridpoint initialize pore-pressure 0.0 range group 'Top'
+; FY39: las lineas FY31 'range id NNNN' (ids de la malla FY31) se reemplazan por la regla geometrica
+[pp_cero_muro(cara_x, cara_y, y_base_muro, 1)]
+;
+[set_negative_pp(::gp.list)]
+[fix_saturation(::gp.list)]
+[save_pp_GP(::gp.list)]
+; K0
+zone initialize-stresses ratio 0.5 range union group 'Construction=enrocado_3' ...
+                                       group 'Construction=relleno_comun_3' ...
+                                       group 'Construction=relave_3'
+; SOLVE ELASTIC
+[assign_props(::zone.list)]
+;[ini_disp_vel("relave_2")]
+model solve elastic only
+[Ini_K0(::zone.list)]
+[Ini_Kalpha(::zone.list)]
+; K0
+zone initialize-stresses ratio 0.5 range union group 'Construction=enrocado_3' ...
+                                       group 'Construction=relleno_comun_3' ...
+                                       group 'Construction=relave_3'
+; MC - UBCHYST
+zone cmodel assign mohr-coulomb range group 'Construction=relave_3'
+zone cmodel assign ubc-hyst range union group 'Construction=enrocado_3' ...
+                                        group 'Construction=relleno_comun_3'
+; SOLVE MODEL
+[assign_props(::zone.list)]
+;[ini_disp_vel("relave_2")]
+model solve
+[Ini_K0(::zone.list)]
+[Ini_Kalpha(::zone.list)]
+; SAVE STAGE
+model save "01_static_3-stage03"
+;
+; ------------------------------------------------------------------
+; STAGE 5: STATIC (FY39)
+; RESTORE
+model restore "01_static_3-stage03"
+; UN-NULL
+zone cmodel assign elastic range union group 'Construction=enrocado_4' ...
+                                       group 'Construction=relleno_comun_4' ...
+                                       group 'Construction=relave_4'
+; DENSITY
+[assign_density(::zone.list)]
+; PORE-PRESSURE
+zone fluid cmodel assign isotropic
+zone initialize fluid-density 1000
+zone gridpoint initialize fluid-modulus 0
+zone gridpoint initialize fluid-tension 0
+zone gridpoint initialize saturation 1
+zone water density 1000
+zone water set 'FLAC MS FY39 WT4'
+zone gridpoint initialize pore-pressure 0.0 range geometry-space 'FLAC MS FY39 WT4' count 1 direction (-1,0)
+zone gridpoint initialize pore-pressure 0.0 range group 'Top'
+; FY39: las lineas FY31 'range id NNNN' (ids de la malla FY31) se reemplazan por la regla geometrica
+[pp_cero_muro(cara_x, cara_y, y_base_muro, 1)]
+;
+[set_negative_pp(::gp.list)]
+[fix_saturation(::gp.list)]
+[save_pp_GP(::gp.list)]
+; K0
+zone initialize-stresses ratio 0.5 range union group 'Construction=enrocado_4' ...
+                                       group 'Construction=relleno_comun_4' ...
+                                       group 'Construction=relave_4'
+; SOLVE ELASTIC
+[assign_props(::zone.list)]
+;[ini_disp_vel("relave_2")]
+model solve elastic only
+[Ini_K0(::zone.list)]
+[Ini_Kalpha(::zone.list)]
+; K0
+zone initialize-stresses ratio 0.5 range union group 'Construction=enrocado_4' ...
+                                       group 'Construction=relleno_comun_4' ...
+                                       group 'Construction=relave_4'
+; MC - UBCHYST
+zone cmodel assign mohr-coulomb range group 'Construction=relave_4'
+zone cmodel assign ubc-hyst range union group 'Construction=enrocado_4' ...
+                                        group 'Construction=relleno_comun_4'
+; SOLVE MODEL
+[assign_props(::zone.list)]
+;[ini_disp_vel("relave_2")]
+model solve
+[Ini_K0(::zone.list)]
+[Ini_Kalpha(::zone.list)]
+; SAVE STAGE
+model save "01_static_4-stage04"
+; ------------------------------------------------------------------
+; STAGE 6: STATIC (FY39)
+; RESTORE
+model restore "01_static_4-stage04"
+; UN-NULL
+zone cmodel assign elastic range union group 'Construction=enrocado_5' ...
+                                       group 'Construction=relleno_comun_5' ...
+                                       group 'Construction=relave_5'
+; DENSITY
+[assign_density(::zone.list)]
+; PORE-PRESSURE
+zone fluid cmodel assign isotropic
+zone initialize fluid-density 1000
+zone gridpoint initialize fluid-modulus 0
+zone gridpoint initialize fluid-tension 0
+zone gridpoint initialize saturation 1
+zone water density 1000
+zone water set 'FLAC MS FY39 WT5'
+zone gridpoint initialize pore-pressure 0.0 range geometry-space 'FLAC MS FY39 WT5' count 1 direction (-1,0)
+zone gridpoint initialize pore-pressure 0.0 range group 'Top'
+; FY39: las lineas FY31 'range id NNNN' (ids de la malla FY31) se reemplazan por la regla geometrica
+[pp_cero_muro(cara_x, cara_y, y_base_muro, 1)]
+;
+[set_negative_pp(::gp.list)]
+[fix_saturation(::gp.list)]
+[save_pp_GP(::gp.list)]
+; K0
+zone initialize-stresses ratio 0.5 range union group 'Construction=enrocado_5' ...
+                                       group 'Construction=relleno_comun_5' ...
+                                       group 'Construction=relave_5'
+; SOLVE ELASTIC
+[assign_props(::zone.list)]
+;[ini_disp_vel("relave_2")]
+model solve elastic only
+[Ini_K0(::zone.list)]
+[Ini_Kalpha(::zone.list)]
+; K0
+zone initialize-stresses ratio 0.5 range union group 'Construction=enrocado_5' ...
+                                       group 'Construction=relleno_comun_5' ...
+                                       group 'Construction=relave_5'
+; MC - UBCHYST
+zone cmodel assign mohr-coulomb range group 'Construction=relave_5'
+zone cmodel assign ubc-hyst range union group 'Construction=enrocado_5' ...
+                                        group 'Construction=relleno_comun_5'
+; SOLVE MODEL
+[assign_props(::zone.list)]
+;[ini_disp_vel("relave_2")]
+model solve
+[Ini_K0(::zone.list)]
+[Ini_Kalpha(::zone.list)]
+; SAVE STAGE
+model save "01_static_5-stage05"
+; ------------------------------------------------------------------
+; STAGE 7: STATIC (FY39)
+; RESTORE
+model restore "01_static_5-stage05"
+; UN-NULL
+zone cmodel assign elastic range union group 'Construction=enrocado_6' ...
+                                       group 'Construction=relleno_comun_6' ...
+                                       group 'Construction=relave_6'
+; DENSITY
+[assign_density(::zone.list)]
+; PORE-PRESSURE
+zone fluid cmodel assign isotropic
+zone initialize fluid-density 1000
+zone gridpoint initialize fluid-modulus 0
+zone gridpoint initialize fluid-tension 0
+zone gridpoint initialize saturation 1
+zone water density 1000
+zone water set 'FLAC MS FY39 WT6'
+zone gridpoint initialize pore-pressure 0.0 range geometry-space 'FLAC MS FY39 WT6' count 1 direction (-1,0)
+zone gridpoint initialize pore-pressure 0.0 range group 'Top'
+; FY39: las lineas FY31 'range id NNNN' (ids de la malla FY31) se reemplazan por la regla geometrica
+[pp_cero_muro(cara_x, cara_y, y_base_muro, 1)]
+;
+[set_negative_pp(::gp.list)]
+[fix_saturation(::gp.list)]
+[save_pp_GP(::gp.list)]
+; K0
+zone initialize-stresses ratio 0.5 range union group 'Construction=enrocado_6' ...
+                                       group 'Construction=relleno_comun_6' ...
+                                       group 'Construction=relave_6'
+; SOLVE ELASTIC
+[assign_props(::zone.list)]
+;[ini_disp_vel("relave_2")]
+model solve elastic only
+[Ini_K0(::zone.list)]
+[Ini_Kalpha(::zone.list)]
+; K0
+zone initialize-stresses ratio 0.5 range union group 'Construction=enrocado_6' ...
+                                       group 'Construction=relleno_comun_6' ...
+                                       group 'Construction=relave_6'
+; MC - UBCHYST
+zone cmodel assign mohr-coulomb range group 'Construction=relave_6'
+zone cmodel assign ubc-hyst range union group 'Construction=enrocado_6' ...
+                                        group 'Construction=relleno_comun_6'
+; SOLVE MODEL
+[assign_props(::zone.list)]
+;[ini_disp_vel("relave_2")]
+model solve
+[Ini_K0(::zone.list)]
+[Ini_Kalpha(::zone.list)]
+; SAVE STAGE
+model save "01_static_6-stage06"
